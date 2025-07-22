@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferramenta do Coordenador</title>
+    
+    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos personalizados */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: flex; /* Usar flex para que o container da view se comporte como flex container */
+        }
+        /* Animação para o modal */
+        .modal-enter {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        /* Barra de rolagem customizada */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        /* Esconde o app até o firebase carregar */
+        #app-container, #selection-container {
+            display: none;
+        }
+        #app-container.active, #selection-container.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- Tela de Seleção de Usuário -->
+    <div id="selection-container" class="h-screen w-screen flex-col items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg modal-enter">
+            <h2 class="text-2xl font-bold text-center text-slate-800 mb-2">Quem está acessando?</h2>
+            <p class="text-center text-slate-500 mb-6">Selecione seu perfil para continuar.</p>
+            <div class="flex flex-col gap-4">
+                <button onclick="promptForPassword('Coordenação A')" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">Coordenação A</button>
+                <button onclick="promptForPassword('Coordenação D')" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors">Coordenação D</button>
+                <button onclick="promptForPassword('Coordenação R')" class="w-full bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors">Coordenação R</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Principal do App -->
+    <div id="app-container" class="h-screen w-screen flex-col md:flex-row">
+        
+        <!-- Menu Lateral (Desktop) / Inferior (Mobile) -->
+        <nav class="bg-white md:w-64 flex md:flex-col justify-around md:justify-start md:p-4 shadow-lg border-t md:border-t-0 md:border-r border-slate-200 order-last md:order-first">
+            <div class="flex-col items-center hidden md:flex mb-6 p-4">
+                <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3 id="current-user-name" class="font-bold text-lg"></h3>
+                <button onclick="logout()" class="mt-2 text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sair
+                </button>
+            </div>
+            
+            <button onclick="switchView('chat')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="chat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="text-sm md:text-base font-medium">Chat</span>
+            </button>
+            <button onclick="switchView('tasks')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="tasks">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span class="text-sm md:text-base font-medium">Tarefas</span>
+            </button>
+            <button onclick="switchView('agenda')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="agenda">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <span class="text-sm md:text-base font-medium">Agenda</span>
+            </button>
+             <button onclick="switchView('settings')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="text-sm md:text-base font-medium">Ajustes</span>
+            </button>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+            <div id="chat-view" class="view flex-col h-full"></div>
+            <div id="tasks-view" class="view flex-col h-full"></div>
+            <div id="agenda-view" class="view flex-col h-full"></div>
+            <div id="settings-view" class="view flex-col h-full"></div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container"></div>
+    
+<script type="module">
+    // Importações do Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ===================================================================================
+    // CONFIGURAÇÃO E ESTADO GLOBAL
+    // ===================================================================================
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyAFciMdd2PXW0nQBwxe53m6l0s1VH2HInQ",
+      authDomain: "app-coordenacao.firebaseapp.com",
+      projectId: "app-coordenacao",
+      storageBucket: "app-coordenacao.appspot.com",
+      messagingSenderId: "149476517818",
+      appId: "1:149476517818:web:433463bdc40b0d1c415f83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const state = {
+        currentUser: null, // Armazena o nome da coordenação (ex: "Coordenação A")
+        authReady: false,
+        currentView: 'chat',
+        messages: [],
+        tasks: [],
+        events: [],
+    };
+    
+    // ===================================================================================
+    // INICIALIZAÇÃO E AUTENTICAÇÃO
+    // ===================================================================================
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // User is signed in (anonymously).
+            state.authReady = true;
+            const loggedInUser = sessionStorage.getItem('coordenacaoUser');
+            if (loggedInUser) {
+                state.currentUser = loggedInUser;
+                setupApp();
+            } else {
+                document.getElementById('selection-container').classList.add('active');
+            }
+        } else {
+            // If no user, sign in anonymously. This is the first step.
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Auth error:", error);
+                document.body.innerHTML = `<p style="color: red; text-align: center; padding: 20px;">Falha na autenticação. Verifique as configurações do Firebase e se o método de login anônimo está ativado.</p>`;
+            }
+        }
+    });
+
+    window.promptForPassword = (coordinatorName) => {
+        const modalContainer = document.getElementById('modal-container');
+        modalContainer.innerHTML = `
+            <div id="password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm modal-enter">
+                    <h3 class="text-xl font-bold mb-2 text-center">Login - ${coordinatorName}</h3>
+                    <p class="text-slate-500 text-center mb-4">Digite sua senha para continuar.</p>
+                    <form id="password-form">
+                        <div class="mb-4">
+                            <label for="user-password" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                            <input type="password" id="user-password" class="w-full p-2 border border-slate-300 rounded-md" required>
+                        </div>
+                        <p id="password-error" class="text-red-500 text-sm text-center mb-4"></p>
+                        <div class="flex gap-3">
+                           <button type="button" onclick="closeModal()" class="w-full bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                           <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Entrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        
+        document.getElementById('password-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleLogin(coordinatorName);
+        });
+    }
+
+    window.closeModal = () => {
+        document.getElementById('modal-container').innerHTML = '';
+    }
+
+    async function handleLogin(coordinatorName) {
+        if (!state.authReady) {
+            console.error("Firebase auth not ready");
+            return;
+        }
+        const passwordInput = document.getElementById('user-password');
+        const errorP = document.getElementById('password-error');
+        const enteredPassword = passwordInput.value;
+        errorP.textContent = '';
+
+        try {
+            const userDocRef = doc(db, "users", coordinatorName);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                const correctPassword = userDoc.data().password;
+                // AVISO: Comparação de senha em texto plano. Não seguro para produção.
+                if (enteredPassword === correctPassword) {
+                    state.currentUser = coordinatorName;
+                    sessionStorage.setItem('coordenacaoUser', coordinatorName); // Salva na sessão
+                    closeModal();
+                    setupApp();
+                } else {
+                    errorP.textContent = 'Senha incorreta.';
+                }
+            } else {
+                errorP.textContent = 'Usuário não encontrado. Contate o administrador.';
+                console.error(`Document for ${coordinatorName} does not exist in 'users' collection.`);
+            }
+        } catch (error) {
+            console.error("Login verification error:", error);
+            errorP.textContent = 'Erro ao verificar a senha.';
+        }
+    }
+
+    window.logout = () => {
+        sessionStorage.removeItem('coordenacaoUser');
+        location.reload();
+    }
+
+    function setupApp() {
+        document.getElementById('selection-container').classList.remove('active');
+        document.getElementById('app-container').classList.add('active');
+        document.getElementById('current-user-name').textContent = state.currentUser;
+        setupFirestoreListeners();
+        switchView(localStorage.getItem('coordenacaoView') || 'chat');
+    }
+
+    // ===================================================================================
+    // LISTENERS DO FIRESTORE (SINCRONIZAÇÃO EM TEMPO REAL)
+    // ===================================================================================
+    
+    function setupFirestoreListeners() {
+        const qMessages = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+        onSnapshot(qMessages, (snapshot) => {
+            state.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (state.currentView === 'chat') renderChatView();
+        });
+
+        const qTasks = query(collection(db, "tasks"));
+        onSnapshot(qTasks, (snapshot) => {
+            state.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (state.currentView === 'tasks') renderTasksView();
+        });
+
+        const qEvents = query(collection(db, "agenda"));
+        onSnapshot(qEvents, (snapshot) => {
+            state.events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (state.currentView === 'agenda') renderAgendaView();
+        });
+    }
+
+    // ===================================================================================
+    // RENDERIZAÇÃO E TROCA DE VIEWS
+    // ===================================================================================
+    
+    window.switchView = (viewName) => {
+        state.currentView = viewName;
+        localStorage.setItem('coordenacaoView', viewName);
+    
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+
+        switch (viewName) {
+            case 'chat': renderChatView(); break;
+            case 'tasks': renderTasksView(); break;
+            case 'agenda': renderAgendaView(); break;
+            case 'settings': renderSettingsView(); break;
+        }
+
+        const targetView = document.getElementById(`${viewName}-view`);
+        if (targetView) targetView.classList.add('active');
+        
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('text-blue-600', 'bg-slate-100');
+            if (link.dataset.view === viewName) {
+                link.classList.add('text-blue-600', 'bg-slate-100');
+            }
+        });
+    }
+
+    function formatDateTime(timestamp) {
+        if (!timestamp || !timestamp.toDate) return '';
+        const date = timestamp.toDate();
+        return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    }
+    function formatDate(isoString) {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+
+    // --- RENDER VIEWS ---
+    function renderChatView() {
+        const view = document.getElementById('chat-view');
+        view.innerHTML = `
+            <header class="p-4 bg-white border-b border-slate-200"><h2 class="text-xl font-bold">Chat Secreto</h2></header>
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
+                ${state.messages.map(msg => {
+                    const isCurrentUser = msg.sender === state.currentUser;
+                    return `
+                    <div class="flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-600 text-white rounded-br-lg' : 'bg-white text-slate-800 rounded-bl-lg shadow-sm'}">
+                            <p class="font-bold text-sm mb-1 ${isCurrentUser ? 'text-blue-200' : 'text-teal-600'}">${msg.sender}</p>
+                            <p>${msg.text}</p>
+                            <p class="text-xs mt-2 opacity-75 ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${formatDateTime(msg.timestamp)}</p>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+            <div class="p-4 bg-white border-t border-slate-200">
+                <div class="flex gap-2">
+                    <input type="text" id="message-input" class="flex-1 p-3 border border-slate-300 rounded-lg" placeholder="Digite sua mensagem...">
+                    <button id="send-message-btn" class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Enviar</button>
+                </div>
+            </div>`;
+        
+        document.getElementById('send-message-btn').onclick = sendMessage;
+        document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+        const messagesContainer = view.querySelector('#chat-messages');
+        if(messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function renderTasksView() {
+        const view = document.getElementById('tasks-view');
+        const sortedTasks = [...state.tasks].sort((a, b) => {
+            if (a.completed !== b.completed) return a.completed ? 1 : -1;
+            return new Date(a.deadline) - new Date(b.deadline);
+        });
+
+        view.innerHTML = `
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Tarefas Compartilhadas</h2>
+                <button id="add-task-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Nova Tarefa</span>
+                </button>
+            </header>
+            <div id="task-list" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
+                ${sortedTasks.length === 0 ? `
+                <div class="text-center text-slate-500 mt-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <p>Nenhuma tarefa por aqui. Adicione uma!</p>
+                </div>` : 
+                sortedTasks.map(task => {
+                    const isCompleted = task.completed;
+                    const isOverdue = !isCompleted && new Date(task.deadline) < new Date();
+                    return `
+                    <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 ${isCompleted ? 'border-green-500 opacity-70' : isOverdue ? 'border-red-500' : 'border-yellow-500'}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="font-semibold ${isCompleted ? 'line-through text-slate-500' : ''}">${task.description}</p>
+                                <div class="text-sm text-slate-500 mt-2 flex items-center gap-4">
+                                    <span class="flex items-center gap-1.5">Prazo: ${formatDate(task.deadline)}</span>
+                                    <span class="flex items-center gap-1.5 font-medium ${isCompleted ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-yellow-600'}">
+                                        ${isCompleted ? 'Concluída' : isOverdue ? 'Atrasada' : 'Pendente'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 ml-4">
+                                <button onclick="toggleTaskStatus('${task.id}', ${task.completed})" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="${isCompleted ? 'Marcar como pendente' : 'Marcar como concluída'}">
+                                    ${isCompleted ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="12" cy="12" r="10"/></svg>'}
+                                </button>
+                                <button onclick="openTaskModal('${task.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Editar tarefa">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                </button>
+                                <button onclick="deleteTask('${task.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Excluir tarefa">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        document.getElementById('add-task-btn').onclick = () => openTaskModal();
+    }
+    
+    function renderAgendaView() {
+        const view = document.getElementById('agenda-view');
+        const sortedEvents = [...state.events].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+        view.innerHTML = `
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Agenda Compartilhada</h2>
+                <button id="add-event-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Novo Evento</span>
+                </button>
+            </header>
+            <div id="event-list" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
+                ${sortedEvents.length === 0 ? `
+                <div class="text-center text-slate-500 mt-8">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                    <p>Nenhum evento na agenda. Adicione um!</p>
+                </div>` : 
+                sortedEvents.map(event => {
+                    const eventDate = new Date(event.dateTime);
+                    const day = String(eventDate.getDate()).padStart(2, '0');
+                    const month = eventDate.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
+                    return `
+                    <div class="bg-white p-4 rounded-lg shadow-sm flex gap-4 items-start">
+                        <div class="flex-shrink-0 text-center bg-slate-100 p-3 rounded-lg w-20">
+                            <p class="text-2xl font-bold text-blue-600">${day}</p>
+                            <p class="text-sm font-semibold uppercase text-slate-600">${month}</p>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-lg">${event.title}</h4>
+                                    <p class="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        ${String(eventDate.getHours()).padStart(2, '0')}:${String(eventDate.getMinutes()).padStart(2, '0')}
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="openEventModal('${event.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Editar evento">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                    </button>
+                                    <button onclick="deleteEvent('${event.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Excluir evento">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-slate-600 mt-2">${event.description || ''}</p>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        document.getElementById('add-event-btn').onclick = () => openEventModal();
+    }
+
+    // --- RENDER AJUSTES ---
+    function renderSettingsView() {
+        const view = document.getElementById('settings-view');
+        view.innerHTML = `
+            <header class="p-4 bg-white border-b border-slate-200"><h2 class="text-xl font-bold">Ajustes da Conta</h2></header>
+            <div class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar">
+                <div class="max-w-lg mx-auto space-y-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Alterar Senha de ${state.currentUser}</h3>
+                        <form id="update-password-form">
+                            <div class="mb-4">
+                                <label for="current-password" class="block text-sm font-medium text-slate-700 mb-1">Senha Atual</label>
+                                <input type="password" id="current-password" class="w-full p-2 border border-slate-300 rounded-md" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="new-password" class="block text-sm font-medium text-slate-700 mb-1">Nova Senha</label>
+                                <input type="password" id="new-password" class="w-full p-2 border border-slate-300 rounded-md" required>
+                            </div>
+                             <p id="update-password-message" class="text-sm mb-4"></p>
+                            <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Nova Senha</button>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+        
+        document.getElementById('update-password-form').addEventListener('submit', handleUpdatePassword);
+    }
+
+    // ===================================================================================
+    // AÇÕES E MODAIS
+    // ===================================================================================
+
+    async function sendMessage() {
+        const input = document.getElementById('message-input');
+        const text = input.value.trim();
+        if (text) {
+            input.value = '';
+            await addDoc(collection(db, "messages"), {
+                sender: state.currentUser,
+                text: text,
+                timestamp: serverTimestamp()
+            });
+        }
+    }
+
+    async function handleUpdatePassword(e) {
+        e.preventDefault();
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const messageP = document.getElementById('update-password-message');
+        messageP.textContent = '';
+
+        if (!state.currentUser) return;
+
+        const userDocRef = doc(db, "users", state.currentUser);
+
+        try {
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists() && userDoc.data().password === currentPassword) {
+                // Senha atual está correta, atualiza para a nova
+                await updateDoc(userDocRef, {
+                    password: newPassword
+                });
+                messageP.textContent = 'Senha atualizada com sucesso!';
+                messageP.className = 'text-green-600 text-sm mb-4';
+                e.target.reset();
+            } else {
+                messageP.textContent = 'A senha atual está incorreta.';
+                messageP.className = 'text-red-600 text-sm mb-4';
+            }
+        } catch (error) {
+            console.error("Update password error:", error);
+            messageP.textContent = 'Ocorreu um erro ao tentar atualizar a senha.';
+            messageP.className = 'text-red-600 text-sm mb-4';
+        }
+    }
+    
+    window.openTaskModal = (taskId = null) => {
+        const modalContainer = document.getElementById('modal-container');
+        const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
+        modalContainer.innerHTML = `
+            <div id="task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-40">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
+                    <h3 class="text-xl font-bold mb-4">${task ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
+                    <form id="task-form">
+                        <input type="hidden" id="task-id" value="${task?.id || ''}">
+                        <div class="mb-4">
+                            <label for="task-description" class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
+                            <input type="text" id="task-description" class="w-full p-2 border border-slate-300 rounded-md" required value="${task?.description || ''}">
+                        </div>
+                        <div class="mb-6">
+                            <label for="task-deadline" class="block text-sm font-medium text-slate-700 mb-1">Prazo</label>
+                            <input type="date" id="task-deadline" class="w-full p-2 border border-slate-300 rounded-md" required value="${task ? new Date(task.deadline).toISOString().split('T')[0] : ''}">
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="closeModal()" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                            <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        
+        document.getElementById('task-form').onsubmit = handleTaskFormSubmit;
+    }
+
+    async function handleTaskFormSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById('task-id').value;
+        const description = document.getElementById('task-description').value;
+        const deadline = document.getElementById('task-deadline').value;
+
+        const data = {
+            description,
+            deadline: new Date(deadline).toISOString().split('T')[0] + 'T23:59:59.999Z', // Fim do dia
+        };
+
+        if (id) {
+            await updateDoc(doc(db, "tasks", id), data);
+        } else {
+            data.completed = false;
+            data.createdAt = serverTimestamp();
+            await addDoc(collection(db, "tasks"), data);
+        }
+        closeModal();
+    }
+
+    window.deleteTask = (taskId) => {
+        showConfirmModal('Tem certeza que deseja excluir esta tarefa?', async () => {
+            await deleteDoc(doc(db, "tasks", taskId));
+        });
+    }
+
+    window.toggleTaskStatus = async (taskId, currentStatus) => {
+        await updateDoc(doc(db, "tasks", taskId), {
+            completed: !currentStatus
+        });
+    }
+
+    window.openEventModal = (eventId = null) => {
+        const modalContainer = document.getElementById('modal-container');
+        const event = eventId ? state.events.find(e => e.id === eventId) : null;
+        const eventDate = event ? new Date(event.dateTime) : null;
+
+        modalContainer.innerHTML = `
+            <div id="event-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-40">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
+                    <h3 class="text-xl font-bold mb-4">${event ? 'Editar Evento' : 'Novo Evento'}</h3>
+                    <form id="event-form">
+                        <input type="hidden" id="event-id" value="${event?.id || ''}">
+                        <div class="mb-4">
+                            <label for="event-title" class="block text-sm font-medium text-slate-700 mb-1">Título</label>
+                            <input type="text" id="event-title" class="w-full p-2 border border-slate-300 rounded-md" required value="${event?.title || ''}">
+                        </div>
+                        <div class="mb-4">
+                            <label for="event-description" class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
+                            <textarea id="event-description" rows="3" class="w-full p-2 border border-slate-300 rounded-md">${event?.description || ''}</textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label for="event-date" class="block text-sm font-medium text-slate-700 mb-1">Data</label>
+                                <input type="date" id="event-date" class="w-full p-2 border border-slate-300 rounded-md" required value="${eventDate ? eventDate.toISOString().split('T')[0] : ''}">
+                            </div>
+                            <div>
+                                <label for="event-time" class="block text-sm font-medium text-slate-700 mb-1">Hora</label>
+                                <input type="time" id="event-time" class="w-full p-2 border border-slate-300 rounded-md" required value="${eventDate ? eventDate.toTimeString().slice(0, 5) : ''}">
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="closeModal()" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
+                            <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        
+        document.getElementById('event-form').onsubmit = handleEventFormSubmit;
+    }
+
+    async function handleEventFormSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById('event-id').value;
+        const title = document.getElementById('event-title').value;
+        const description = document.getElementById('event-description').value;
+        const date = document.getElementById('event-date').value;
+        const time = document.getElementById('event-time').value;
+
+        const data = {
+            title,
+            description,
+            dateTime: new Date(`${date}T${time}`).toISOString()
+        };
+
+        if (id) {
+            await updateDoc(doc(db, "agenda", id), data);
+        } else {
+            await addDoc(collection(db, "agenda"), data);
+        }
+        closeModal();
+    }
+
+    window.deleteEvent = (eventId) => {
+        showConfirmModal('Tem certeza que deseja excluir este evento?', async () => {
+            await deleteDoc(doc(db, "agenda", eventId));
+        });
+    }
+    
+    function showConfirmModal(message, onConfirm) {
+        const modalContainer = document.getElementById('modal-container');
+        modalContainer.innerHTML = `
+            <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm modal-enter text-center">
+                    <p class="text-lg mb-6">${message}</p>
+                    <div class="flex justify-center gap-4">
+                        <button id="confirm-cancel" onclick="closeModal()" class="bg-slate-200 text-slate-800 font-semibold py-2 px-6 rounded-lg hover:bg-slate-300">Cancelar</button>
+                        <button id="confirm-ok" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-700">Confirmar</button>
+                    </div>
+                </div>
+            </div>`;
+
+        document.getElementById('confirm-ok').onclick = () => {
+            onConfirm();
+            closeModal();
+        };
+    }
+    
+</script>
+
+</body>
+</html>
