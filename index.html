@@ -138,7 +138,7 @@
     // Importações do Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // ===================================================================================
     // CONFIGURAÇÃO E ESTADO GLOBAL
@@ -198,6 +198,7 @@
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             state.authReady = true;
+            await checkForMessageCleanup();
             const loggedInUser = sessionStorage.getItem('coordenacaoUser');
             if (loggedInUser) {
                 state.currentUser = loggedInUser;
@@ -384,7 +385,7 @@
                     return `
                     <div class="flex items-start gap-2 ${isCurrentUser ? 'justify-end' : ''}">
                         <div class="relative group message-bubble max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 shadow-sm'}">
-                            <button onclick="openMessageActions('${msg.id}')" class="message-actions absolute top-0 ${isCurrentUser ? '-left-8' : '-right-8'} p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openMessageActions('${msg.id}')" class="message-actions absolute top-0 ${isCurrentUser ? '-left-8' : '-right-8'} p-1 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                             </button>
                             ${replyHTML}
@@ -456,6 +457,10 @@
                                 <div class="text-sm text-slate-500 mt-2 flex items-center gap-4 flex-wrap">
                                     <span class="flex items-center gap-1.5">Prazo: ${formatDate(task.deadline)}</span>
                                     <span class="font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}">${task.priority || 'Sem prioridade'}</span>
+                                </div>
+                                <div class="text-xs text-slate-400 mt-2 border-t pt-2">
+                                    Criado por: <span class="font-medium">${task.createdBy || 'Desconhecido'}</span>
+                                    ${isCompleted && task.completedBy ? `| Concluído por: <span class="font-medium">${task.completedBy}</span>` : ''}
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 ml-4">
@@ -830,6 +835,7 @@
         } else {
             data.completed = false;
             data.createdAt = serverTimestamp();
+            data.createdBy = state.currentUser;
             await addDoc(collection(db, "tasks"), data);
         }
         closeModal();
@@ -842,9 +848,11 @@
     }
 
     window.toggleTaskStatus = async (taskId, currentStatus) => {
-        await updateDoc(doc(db, "tasks", taskId), {
-            completed: !currentStatus
-        });
+        const updateData = {
+            completed: !currentStatus,
+            completedBy: !currentStatus ? state.currentUser : null,
+        };
+        await updateDoc(doc(db, "tasks", taskId), updateData);
     }
 
     window.openEventModal = (eventId = null) => {
@@ -995,6 +1003,40 @@
     window.clearReply = () => {
         newMessageReply = null;
         updateReplyPreview();
+    }
+
+    async function checkForMessageCleanup() {
+        const today = new Date().toLocaleDateString();
+        const metaRef = doc(db, "app_meta", "cleanup_tracker");
+
+        try {
+            const metaDoc = await getDoc(metaRef);
+            let lastCleanup = '';
+
+            if (metaDoc.exists()) {
+                lastCleanup = metaDoc.data().lastCleanupDate;
+            } else {
+                await setDoc(metaRef, { lastCleanupDate: today });
+                console.log("Rastreador de limpeza inicializado.");
+                return;
+            }
+
+            if (lastCleanup !== today) {
+                console.log("Novo dia detectado, limpando mensagens...");
+                const messagesRef = collection(db, "messages");
+                const snapshot = await getDocs(messagesRef);
+                const deletePromises = [];
+                snapshot.forEach(doc => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                await Promise.all(deletePromises);
+                
+                await updateDoc(metaRef, { lastCleanupDate: today });
+                console.log("Mensagens antigas apagadas e data de limpeza atualizada.");
+            }
+        } catch (error) {
+            console.error("Erro no processo de limpeza de mensagens:", error);
+        }
     }
     
 </script>
