@@ -1,35 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ferramenta do Coordenador</title>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="data:application/manifest+json,{
-        &quot;name&quot;: &quot;Ferramenta do Coordenador&quot;,
-        &quot;short_name&quot;: &quot;Coordenador&quot;,
-        &quot;start_url&quot;: &quot;.&quot;,
-        &quot;display&quot;: &quot;standalone&quot;,
-        &quot;background_color&quot;: &quot;#f1f5f9&quot;,
-        &quot;theme_color&quot;: &quot;#4338ca&quot;,
-        &quot;description&quot;: &quot;App de comunicação para coordenadores escolares.&quot;,
-        &quot;icons&quot;: [
-            { &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%234338ca'/%3E%3Cpath fill='white' d='M62.7,20H37.3C27.8,20,20,27.8,20,37.3v16.4c0,9.5,7.8,17.3,17.3,17.3h6.4l11.7,11.7c1.6,1.6,4.1,0.5,4.1-1.8V71h3.2c9.5,0,17.3-7.8,17.3-17.3V37.3C80,27.8,72.2,20,62.7,20z M57.5,48.5l-12,12L35,50l5-5l5.5,5.5l7-7L57.5,48.5z'/%3E%3C/svg%3E&quot;, &quot;sizes&quot;: &quot;any&quot;, &quot;type&quot;: &quot;image/svg+xml&quot; }
-        ]
-    }">
-
-    <!-- Favicon Personalizado -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%234338ca'/%3E%3Cpath fill='white' d='M62.7,20H37.3C27.8,20,20,27.8,20,37.3v16.4c0,9.5,7.8,17.3,17.3,17.3h6.4l11.7,11.7c1.6,1.6,4.1,0.5,4.1-1.8V71h3.2c9.5,0,17.3-7.8,17.3-17.3V37.3C80,27.8,72.2,20,62.7,20z M57.5,48.5l-12,12L35,50l5-5l5.5,5.5l7-7L57.5,48.5z'/%3E%3C/svg%3E">
 
     <!-- Tailwind CSS para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Fontes do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
+    <link rel="manifest" href="/manifest.json">
+
     <style>
         /* Estilos personalizados */
         body {
@@ -40,60 +26,85 @@
             -moz-user-select: none;
             -ms-user-select: none;
         }
+
         .view {
             display: none;
         }
+
         .view.active {
-            display: flex; /* Usar flex para que o container da view se comporte como flex container */
+            display: flex;
+            /* Usar flex para que o container da view se comporte como flex container */
         }
+
         /* Animação para o modal */
         .modal-enter {
             animation: fadeIn 0.3s ease-out;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
+
         /* Barra de rolagem customizada */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f5f9;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #94a3b8;
             border-radius: 10px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
+
         /* Esconde o app até o firebase carregar */
-        #app-container, #selection-container {
+        #app-container,
+        #selection-container {
             display: none;
         }
-        #app-container.active, #selection-container.active {
+
+        #app-container.active,
+        #selection-container.active {
             display: flex;
         }
+
         /* Estilo para o seletor de cor */
-        input[type="radio"]:checked + label {
+        input[type="radio"]:checked+label {
             transform: scale(1.1);
             box-shadow: 0 0 0 3px white, 0 0 0 5px var(--tw-ring-color);
         }
+
         /* Opções da mensagem */
         .message-bubble .message-actions {
             opacity: 0;
             transition: opacity 0.2s ease-in-out;
         }
+
         .message-bubble:hover .message-actions {
             opacity: 1;
         }
+
         /* Camada de segurança para dificultar print screen */
         @media print {
             body {
                 display: none !important;
             }
         }
+
         .secure-overlay::after {
             content: '';
             position: fixed;
@@ -107,6 +118,7 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-100 text-slate-800 secure-overlay h-full overflow-hidden">
 
     <!-- Tela de Seleção de Usuário -->
@@ -115,47 +127,99 @@
             <h2 class="text-2xl font-bold text-center text-slate-800 mb-2">Quem está acessando?</h2>
             <p class="text-center text-slate-500 mb-6">Selecione seu perfil para continuar.</p>
             <div class="flex flex-col gap-4">
-                <button onclick="promptForPassword('Coordenação A')" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">Coordenação A</button>
-                <button onclick="promptForPassword('Coordenação D')" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors">Coordenação D</button>
-                <button onclick="promptForPassword('Coordenação R')" class="w-full bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors">Coordenação R</button>
+                <button onclick="promptForPassword('Coordenação A')"
+                    class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">Coordenação
+                    A</button>
+                <button onclick="promptForPassword('Coordenação D')"
+                    class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors">Coordenação
+                    D</button>
+                <button onclick="promptForPassword('Coordenação R')"
+                    class="w-full bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors">Coordenação
+                    R</button>
             </div>
         </div>
     </div>
 
     <!-- Container Principal do App -->
     <div id="app-container" class="h-full w-full flex flex-col md:flex-row">
-        
+
         <!-- Menu Lateral (Desktop) -->
         <nav class="bg-white md:w-64 flex-col justify-start p-4 shadow-lg border-r border-slate-200 hidden md:flex">
             <div class="flex-col items-center flex mb-6 p-4">
                 <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-slate-500">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
                 </div>
                 <h3 id="current-user-name" class="font-bold text-lg"></h3>
-                <button onclick="logout()" class="mt-2 text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <button onclick="logout()"
+                    class="mt-2 text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     Sair
                 </button>
             </div>
-            
-            <button onclick="switchView('chat')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="chat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+
+            <button onclick="switchView('chat')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="chat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
                 <span class="text-base font-medium">Chat</span>
             </button>
-            <button onclick="switchView('tasks')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="tasks">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <button onclick="switchView('tasks')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="tasks">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
                 <span class="text-base font-medium">Tarefas</span>
             </button>
-            <button onclick="switchView('agenda')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="agenda">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <button onclick="switchView('agenda')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="agenda">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                    <line x1="16" x2="16" y1="2" y2="6" />
+                    <line x1="8" x2="8" y1="2" y2="6" />
+                    <line x1="3" x2="21" y1="10" y2="10" />
+                </svg>
                 <span class="text-base font-medium">Agenda</span>
             </button>
-            <button onclick="switchView('tags')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="tags">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z"/><path d="M9 9h.01"/></svg>
+            <button onclick="switchView('tags')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="tags">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z" />
+                    <path d="M9 9h.01" />
+                </svg>
                 <span class="text-base font-medium">Tags</span>
             </button>
-             <button onclick="switchView('settings')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="settings">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <button onclick="switchView('settings')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
                 <span class="text-base font-medium">Ajustes</span>
             </button>
         </nav>
@@ -172,24 +236,52 @@
 
             <!-- Menu Inferior (Mobile) -->
             <nav class="bg-white flex md:hidden justify-around shadow-lg border-t border-slate-200 flex-shrink-0">
-                 <button onclick="switchView('chat')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="chat">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <button onclick="switchView('chat')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
                     <span class="text-xs font-medium">Chat</span>
                 </button>
-                <button onclick="switchView('tasks')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="tasks">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <button onclick="switchView('tasks')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="tasks">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
                     <span class="text-xs font-medium">Tarefas</span>
                 </button>
-                <button onclick="switchView('agenda')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="agenda">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <button onclick="switchView('agenda')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="agenda">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                        <line x1="16" x2="16" y1="2" y2="6" />
+                        <line x1="8" x2="8" y1="2" y2="6" />
+                        <line x1="3" x2="21" y1="10" y2="10" />
+                    </svg>
                     <span class="text-xs font-medium">Agenda</span>
                 </button>
-                <button onclick="switchView('tags')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="tags">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z"/><path d="M9 9h.01"/></svg>
+                <button onclick="switchView('tags')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="tags">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z" />
+                        <path d="M9 9h.01" />
+                    </svg>
                     <span class="text-xs font-medium">Tags</span>
                 </button>
-                 <button onclick="switchView('settings')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="settings">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <button onclick="switchView('settings')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
                     <span class="text-xs font-medium">Ajustes</span>
                 </button>
             </nav>
@@ -198,113 +290,113 @@
 
     <!-- Modals -->
     <div id="modal-container"></div>
-    
-<script type="module">
-    // Importações do Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, getDocs, setDoc, writeBatch, arrayUnion, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // ===================================================================================
-    // CONFIGURAÇÃO E ESTADO GLOBAL
-    // ===================================================================================
-    
-    const firebaseConfig = {
-      apiKey: "AIzaSyAFciMdd2PXW0nQBwxe53m6l0s1VH2HInQ",
-      authDomain: "app-coordenacao.firebaseapp.com",
-      projectId: "app-coordenacao",
-      storageBucket: "app-coordenacao.appspot.com",
-      messagingSenderId: "149476517818",
-      appId: "1:149476517818:web:433463bdc40b0d1c415f83"
-    };
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, getDocs, setDoc, writeBatch, arrayUnion, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+        // ===================================================================================
+        // CONFIGURAÇÃO E ESTADO GLOBAL
+        // ===================================================================================
 
-    const state = {
-        currentUser: null,
-        authReady: false,
-        currentView: 'chat',
-        chatMode: 'general', // 'general' or 'private'
-        privateChatPartner: null,
-        messages: [],
-        tasks: [],
-        events: [],
-        tags: [],
-        taskSearchTerm: '',
-        unreadChats: [], // Nomes dos parceiros com mensagens não lidas
-    };
-    
-    let unsubscribeMessages = () => {}; // Função para parar de ouvir o chat atual
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFciMdd2PXW0nQBwxe53m6l0s1VH2HInQ",
+            authDomain: "app-coordenacao.firebaseapp.com",
+            projectId: "app-coordenacao",
+            storageBucket: "app-coordenacao.appspot.com",
+            messagingSenderId: "149476517818",
+            appId: "1:149476517818:web:433463bdc40b0d1c415f83"
+        };
 
-    let newMessageAttachments = {
-        tags: [],
-        linkedTask: null,
-        linkedEvent: null,
-    };
-    
-    let newMessageReply = null;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    const tagColors = {
-        red: { bg: 'bg-red-200', text: 'text-red-800', ring: 'ring-red-500' },
-        orange: { bg: 'bg-orange-200', text: 'text-orange-800', ring: 'ring-orange-500' },
-        yellow: { bg: 'bg-yellow-200', text: 'text-yellow-800', ring: 'ring-yellow-500' },
-        green: { bg: 'bg-green-200', text: 'text-green-800', ring: 'ring-green-500' },
-        teal: { bg: 'bg-teal-200', text: 'text-teal-800', ring: 'ring-teal-500' },
-        blue: { bg: 'bg-blue-200', text: 'text-blue-800', ring: 'ring-blue-500' },
-        indigo: { bg: 'bg-indigo-200', text: 'text-indigo-800', ring: 'ring-indigo-500' },
-        purple: { bg: 'bg-purple-200', text: 'text-purple-800', ring: 'ring-purple-500' },
-        pink: { bg: 'bg-pink-200', text: 'text-pink-800', ring: 'ring-pink-500' },
-        gray: { bg: 'bg-slate-200', text: 'text-slate-800', ring: 'ring-slate-500' },
-    };
+        const state = {
+            currentUser: null,
+            authReady: false,
+            currentView: 'chat',
+            chatMode: 'general', // 'general' or 'private'
+            privateChatPartner: null,
+            messages: [],
+            tasks: [],
+            events: [],
+            tags: [],
+            taskSearchTerm: '',
+            unreadChats: [], // Nomes dos parceiros com mensagens não lidas
+        };
 
-    const priorityStyles = {
-        'Alta': { border: 'border-red-500', text: 'text-red-600', bg: 'bg-red-100' },
-        'Média': { border: 'border-yellow-500', text: 'text-yellow-600', bg: 'bg-yellow-100' },
-        'Baixa': { border: 'border-blue-500', text: 'text-blue-600', bg: 'bg-blue-100' },
-    };
-    
-    // ===================================================================================
-    // INICIALIZAÇÃO E AUTENTICAÇÃO
-    // ===================================================================================
+        let unsubscribeMessages = () => { }; // Função para parar de ouvir o chat atual
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            state.authReady = true;
-            await checkForMessageCleanup();
-            const loggedInUser = sessionStorage.getItem('coordenacaoUser');
-            if (loggedInUser) {
-                state.currentUser = loggedInUser;
-                await checkForUnreadMessages();
-                setupApp();
+        let newMessageAttachments = {
+            tags: [],
+            linkedTask: null,
+            linkedEvent: null,
+        };
+
+        let newMessageReply = null;
+
+        const tagColors = {
+            red: { bg: 'bg-red-200', text: 'text-red-800', ring: 'ring-red-500' },
+            orange: { bg: 'bg-orange-200', text: 'text-orange-800', ring: 'ring-orange-500' },
+            yellow: { bg: 'bg-yellow-200', text: 'text-yellow-800', ring: 'ring-yellow-500' },
+            green: { bg: 'bg-green-200', text: 'text-green-800', ring: 'ring-green-500' },
+            teal: { bg: 'bg-teal-200', text: 'text-teal-800', ring: 'ring-teal-500' },
+            blue: { bg: 'bg-blue-200', text: 'text-blue-800', ring: 'ring-blue-500' },
+            indigo: { bg: 'bg-indigo-200', text: 'text-indigo-800', ring: 'ring-indigo-500' },
+            purple: { bg: 'bg-purple-200', text: 'text-purple-800', ring: 'ring-purple-500' },
+            pink: { bg: 'bg-pink-200', text: 'text-pink-800', ring: 'ring-pink-500' },
+            gray: { bg: 'bg-slate-200', text: 'text-slate-800', ring: 'ring-slate-500' },
+        };
+
+        const priorityStyles = {
+            'Alta': { border: 'border-red-500', text: 'text-red-600', bg: 'bg-red-100' },
+            'Média': { border: 'border-yellow-500', text: 'text-yellow-600', bg: 'bg-yellow-100' },
+            'Baixa': { border: 'border-blue-500', text: 'text-blue-600', bg: 'bg-blue-100' },
+        };
+
+        // ===================================================================================
+        // INICIALIZAÇÃO E AUTENTICAÇÃO
+        // ===================================================================================
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                state.authReady = true;
+                await checkForMessageCleanup();
+                const loggedInUser = sessionStorage.getItem('coordenacaoUser');
+                if (loggedInUser) {
+                    state.currentUser = loggedInUser;
+                    await checkForUnreadMessages();
+                    setupApp();
+                } else {
+                    document.getElementById('selection-container').classList.add('active');
+                }
             } else {
-                document.getElementById('selection-container').classList.add('active');
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Auth error:", error);
+                }
             }
-        } else {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Auth error:", error);
+        });
+
+        // Bloqueia o menu de contexto (botão direito)
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Bloqueia atalhos de teclado para copiar
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey || e.metaKey) { // Ctrl no Windows, Cmd no Mac
+                if (['c', 'x', 'u'].includes(e.key.toLowerCase())) {
+                    e.preventDefault();
+                }
             }
-        }
-    });
+        });
 
-    // Bloqueia o menu de contexto (botão direito)
-    document.addEventListener('contextmenu', event => event.preventDefault());
-
-    // Bloqueia atalhos de teclado para copiar
-    document.addEventListener('keydown', e => {
-        if (e.ctrlKey || e.metaKey) { // Ctrl no Windows, Cmd no Mac
-            if (['c', 'x', 'u'].includes(e.key.toLowerCase())) {
-                e.preventDefault();
-            }
-        }
-    });
-
-    window.promptForPassword = (coordinatorName) => {
-        const modalContainer = document.getElementById('modal-container');
-        modalContainer.innerHTML = `
+        window.promptForPassword = (coordinatorName) => {
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
             <div id="password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm modal-enter">
                     <h3 class="text-xl font-bold mb-2 text-center">Login - ${coordinatorName}</h3>
@@ -322,157 +414,157 @@
                     </form>
                 </div>
             </div>`;
-        
-        document.getElementById('password-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            handleLogin(coordinatorName);
-        });
-    };
 
-    window.closeModal = () => {
-        document.getElementById('modal-container').innerHTML = '';
-    };
+            document.getElementById('password-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleLogin(coordinatorName);
+            });
+        };
 
-    async function handleLogin(coordinatorName) {
-        if (!state.authReady) {
-            console.error("Firebase auth not ready");
-            return;
-        }
-        const passwordInput = document.getElementById('user-password');
-        const errorP = document.getElementById('password-error');
-        const enteredPassword = passwordInput.value;
-        errorP.textContent = '';
+        window.closeModal = () => {
+            document.getElementById('modal-container').innerHTML = '';
+        };
 
-        try {
-            const userDocRef = doc(db, "users", coordinatorName);
-            const userDoc = await getDoc(userDocRef);
+        async function handleLogin(coordinatorName) {
+            if (!state.authReady) {
+                console.error("Firebase auth not ready");
+                return;
+            }
+            const passwordInput = document.getElementById('user-password');
+            const errorP = document.getElementById('password-error');
+            const enteredPassword = passwordInput.value;
+            errorP.textContent = '';
 
-            if (userDoc.exists()) {
-                const correctPassword = userDoc.data().password;
-                if (enteredPassword === correctPassword) {
-                    state.currentUser = coordinatorName;
-                    sessionStorage.setItem('coordenacaoUser', coordinatorName);
-                    closeModal();
-                    await checkForUnreadMessages();
-                    setupApp();
+            try {
+                const userDocRef = doc(db, "users", coordinatorName);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists()) {
+                    const correctPassword = userDoc.data().password;
+                    if (enteredPassword === correctPassword) {
+                        state.currentUser = coordinatorName;
+                        sessionStorage.setItem('coordenacaoUser', coordinatorName);
+                        closeModal();
+                        await checkForUnreadMessages();
+                        setupApp();
+                    } else {
+                        errorP.textContent = 'Senha incorreta.';
+                    }
                 } else {
-                    errorP.textContent = 'Senha incorreta.';
+                    errorP.textContent = 'Usuário não encontrado. Contate o administrador.';
+                    console.error(`Document for ${coordinatorName} does not exist in 'users' collection.`);
                 }
+            } catch (error) {
+                console.error("Login verification error:", error);
+                errorP.textContent = 'Erro ao verificar a senha.';
+            }
+        }
+
+        window.logout = () => {
+            sessionStorage.removeItem('coordenacaoUser');
+            location.reload();
+        };
+
+        function setupApp() {
+            document.getElementById('selection-container').classList.remove('active');
+            document.getElementById('app-container').classList.add('active');
+            document.getElementById('current-user-name').textContent = state.currentUser;
+            setupFirestoreListeners();
+            switchView(localStorage.getItem('coordenacaoView') || 'chat');
+        }
+
+        // ===================================================================================
+        // LISTENERS DO FIRESTORE
+        // ===================================================================================
+
+        function setupFirestoreListeners() {
+            // Cancelar listener anterior
+            unsubscribeMessages();
+
+            let messagesQuery;
+            if (state.chatMode === 'private') {
+                const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+                messagesQuery = query(collection(db, "private_chats", chatId, "messages"), orderBy("timestamp", "asc"));
             } else {
-                errorP.textContent = 'Usuário não encontrado. Contate o administrador.';
-                console.error(`Document for ${coordinatorName} does not exist in 'users' collection.`);
+                messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "asc"));
             }
-        } catch (error) {
-            console.error("Login verification error:", error);
-            errorP.textContent = 'Erro ao verificar a senha.';
-        }
-    }
 
-    window.logout = () => {
-        sessionStorage.removeItem('coordenacaoUser');
-        location.reload();
-    };
+            unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+                state.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.currentView === 'chat') renderChatView();
+            });
 
-    function setupApp() {
-        document.getElementById('selection-container').classList.remove('active');
-        document.getElementById('app-container').classList.add('active');
-        document.getElementById('current-user-name').textContent = state.currentUser;
-        setupFirestoreListeners();
-        switchView(localStorage.getItem('coordenacaoView') || 'chat');
-    }
+            // Listeners que não mudam
+            onSnapshot(query(collection(db, "tasks")), (snapshot) => {
+                state.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.currentView === 'tasks') renderTasksView();
+            });
 
-    // ===================================================================================
-    // LISTENERS DO FIRESTORE
-    // ===================================================================================
-    
-    function setupFirestoreListeners() {
-        // Cancelar listener anterior
-        unsubscribeMessages();
+            onSnapshot(query(collection(db, "agenda")), (snapshot) => {
+                state.events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.currentView === 'agenda') renderAgendaView();
+            });
 
-        let messagesQuery;
-        if (state.chatMode === 'private') {
-            const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
-            messagesQuery = query(collection(db, "private_chats", chatId, "messages"), orderBy("timestamp", "asc"));
-        } else {
-            messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+            onSnapshot(query(collection(db, "tags"), orderBy("name", "asc")), (snapshot) => {
+                state.tags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.currentView === 'tags') renderTagsView();
+            });
         }
 
-        unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
-            state.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            if (state.currentView === 'chat') renderChatView();
-        });
+        // ===================================================================================
+        // RENDERIZAÇÃO E TROCA DE VIEWS
+        // ===================================================================================
 
-        // Listeners que não mudam
-        onSnapshot(query(collection(db, "tasks")), (snapshot) => {
-            state.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            if (state.currentView === 'tasks') renderTasksView();
-        });
+        window.switchView = (viewName) => {
+            state.currentView = viewName;
+            localStorage.setItem('coordenacaoView', viewName);
 
-        onSnapshot(query(collection(db, "agenda")), (snapshot) => {
-            state.events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            if (state.currentView === 'agenda') renderAgendaView();
-        });
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
 
-        onSnapshot(query(collection(db, "tags"), orderBy("name", "asc")), (snapshot) => {
-            state.tags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            if (state.currentView === 'tags') renderTagsView();
-        });
-    }
-
-    // ===================================================================================
-    // RENDERIZAÇÃO E TROCA DE VIEWS
-    // ===================================================================================
-    
-    window.switchView = (viewName) => {
-        state.currentView = viewName;
-        localStorage.setItem('coordenacaoView', viewName);
-    
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-
-        switch (viewName) {
-            case 'chat': renderChatView(); break;
-            case 'tasks': renderTasksView(); break;
-            case 'agenda': renderAgendaView(); break;
-            case 'tags': renderTagsView(); break;
-            case 'settings': renderSettingsView(); break;
-        }
-
-        const targetView = document.getElementById(`${viewName}-view`);
-        if (targetView) targetView.classList.add('active');
-        
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('text-blue-600', 'bg-slate-100');
-            if (link.dataset.view === viewName) {
-                link.classList.add('text-blue-600', 'bg-slate-100');
+            switch (viewName) {
+                case 'chat': renderChatView(); break;
+                case 'tasks': renderTasksView(); break;
+                case 'agenda': renderAgendaView(); break;
+                case 'tags': renderTagsView(); break;
+                case 'settings': renderSettingsView(); break;
             }
-        });
-    }
 
-    function formatDateTime(timestamp) {
-        if (!timestamp || !timestamp.toDate) return '';
-        const date = timestamp.toDate();
-        return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-    }
-    function formatDate(isoString) {
-        if (!isoString) return '';
-        const date = new Date(isoString);
-        return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-    }
+            const targetView = document.getElementById(`${viewName}-view`);
+            if (targetView) targetView.classList.add('active');
 
-    // --- RENDER CHAT ---
-    function renderChatView() {
-        const view = document.getElementById('chat-view');
-        let headerHTML = '';
-        if (state.chatMode === 'private') {
-            headerHTML = `
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('text-blue-600', 'bg-slate-100');
+                if (link.dataset.view === viewName) {
+                    link.classList.add('text-blue-600', 'bg-slate-100');
+                }
+            });
+        }
+
+        function formatDateTime(timestamp) {
+            if (!timestamp || !timestamp.toDate) return '';
+            const date = timestamp.toDate();
+            return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        }
+        function formatDate(isoString) {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+
+        // --- RENDER CHAT ---
+        function renderChatView() {
+            const view = document.getElementById('chat-view');
+            let headerHTML = '';
+            if (state.chatMode === 'private') {
+                headerHTML = `
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-bold">Conversa com ${state.privateChatPartner}</h2>
                     <button onclick="switchToGeneralChat()" class="text-sm bg-slate-200 px-3 py-1 rounded-lg hover:bg-slate-300">Voltar ao Chat Geral</button>
                 </div>`;
-        } else {
-            const hasAnyUnread = state.unreadChats && state.unreadChats.length > 0;
-            const unreadIndicator = hasAnyUnread ? `<span class="w-2 h-2 bg-red-500 rounded-full absolute top-1 right-1"></span>` : '';
-            headerHTML = `
+            } else {
+                const hasAnyUnread = state.unreadChats && state.unreadChats.length > 0;
+                const unreadIndicator = hasAnyUnread ? `<span class="w-2 h-2 bg-red-500 rounded-full absolute top-1 right-1"></span>` : '';
+                headerHTML = `
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-bold">Chat Secreto (Todos)</h2>
                     <button onclick="openPrivateChatSelectionModal()" class="relative text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200">
@@ -480,19 +572,19 @@
                         ${unreadIndicator}
                     </button>
                 </div>`;
-        }
+            }
 
-        view.innerHTML = `
+            view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex-shrink-0">${headerHTML}</header>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                 ${state.messages.map(msg => {
-                    const isCurrentUser = msg.sender === state.currentUser;
-                    const replyHTML = msg.replyTo ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${isCurrentUser ? 'bg-blue-500 border-blue-300' : 'bg-slate-100 border-slate-300'}"><p class="font-bold text-sm ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${msg.replyTo.sender}</p><p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p></div>` : '';
-                    const tagsHTML = (msg.tags && msg.tags.length > 0) ? `<div class="flex flex-wrap gap-2 mt-2">${msg.tags.map(tagData => { const colorClasses = tagColors[tagData.color] || tagColors.gray; return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full">${tagData.name}</span>` }).join('')}</div>` : '';
-                    const taskHTML = msg.linkedTask ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">TAREFA VINCULADA</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedTask.description}</p></div>` : '';
-                    const eventHTML = msg.linkedEvent ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">EVENTO VINCULADO</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedEvent.title}</p></div>` : '';
+                const isCurrentUser = msg.sender === state.currentUser;
+                const replyHTML = msg.replyTo ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${isCurrentUser ? 'bg-blue-500 border-blue-300' : 'bg-slate-100 border-slate-300'}"><p class="font-bold text-sm ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${msg.replyTo.sender}</p><p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p></div>` : '';
+                const tagsHTML = (msg.tags && msg.tags.length > 0) ? `<div class="flex flex-wrap gap-2 mt-2">${msg.tags.map(tagData => { const colorClasses = tagColors[tagData.color] || tagColors.gray; return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full">${tagData.name}</span>` }).join('')}</div>` : '';
+                const taskHTML = msg.linkedTask ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">TAREFA VINCULADA</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedTask.description}</p></div>` : '';
+                const eventHTML = msg.linkedEvent ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">EVENTO VINCULADO</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedEvent.title}</p></div>` : '';
 
-                    return `
+                return `
                     <div class="flex items-start gap-2 ${isCurrentUser ? 'justify-end' : ''}">
                         <div class="relative group message-bubble max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 shadow-sm'}">
                             <button onclick="openMessageActions('${msg.id}')" class="message-actions absolute top-0 ${isCurrentUser ? '-left-8' : '-right-8'} p-1 rounded-full">
@@ -505,7 +597,7 @@
                             <p class="text-xs mt-2 text-right opacity-75 ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${formatDateTime(msg.timestamp)}</p>
                         </div>
                     </div>`;
-                }).join('')}
+            }).join('')}
             </div>
             <div id="chat-input-area" class="bg-white border-t border-slate-200 flex-shrink-0">
                 <div id="reply-preview" class="p-2 bg-slate-100 border-b border-slate-200" style="display: none;"></div>
@@ -520,30 +612,30 @@
                     </div>
                 </div>
             </div>`;
-        
-        document.getElementById('send-message-btn').onclick = sendMessage;
-        document.getElementById('attach-btn').onclick = openAttachmentMenu;
-        document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
-        const messagesContainer = view.querySelector('#chat-messages');
-        if(messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        updateAttachmentsPreview();
-        updateReplyPreview();
-    }
 
-    function renderTasksView() {
-        const view = document.getElementById('tasks-view');
-        
-        const filteredTasks = state.tasks.filter(task => 
-            task.description.toLowerCase().includes(state.taskSearchTerm.toLowerCase())
-        );
+            document.getElementById('send-message-btn').onclick = sendMessage;
+            document.getElementById('attach-btn').onclick = openAttachmentMenu;
+            document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+            const messagesContainer = view.querySelector('#chat-messages');
+            if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            updateAttachmentsPreview();
+            updateReplyPreview();
+        }
 
-        const sortedTasks = [...filteredTasks].sort((a, b) => {
-            if (a.completed !== b.completed) return a.completed ? 1 : -1;
-            const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
-            return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
-        });
+        function renderTasksView() {
+            const view = document.getElementById('tasks-view');
 
-        view.innerHTML = `
+            const filteredTasks = state.tasks.filter(task =>
+                task.description.toLowerCase().includes(state.taskSearchTerm.toLowerCase())
+            );
+
+            const sortedTasks = [...filteredTasks].sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+                return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
+            });
+
+            view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-wrap gap-4 flex-shrink-0">
                 <h2 class="text-xl font-bold">Tarefas Compartilhadas</h2>
                 <button onclick="openTaskModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -555,11 +647,11 @@
                 </div>
             </header>
             <div id="task-list" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
-                ${sortedTasks.length === 0 ? `<div class="text-center text-slate-500 mt-8"><p>Nenhuma tarefa encontrada.</p></div>` : 
-                sortedTasks.map(task => {
-                    const isCompleted = task.completed;
-                    const style = priorityStyles[task.priority] || { border: 'border-slate-500', text: 'text-slate-600', bg: 'bg-slate-100' };
-                    return `
+                ${sortedTasks.length === 0 ? `<div class="text-center text-slate-500 mt-8"><p>Nenhuma tarefa encontrada.</p></div>` :
+                    sortedTasks.map(task => {
+                        const isCompleted = task.completed;
+                        const style = priorityStyles[task.priority] || { border: 'border-slate-500', text: 'text-slate-600', bg: 'bg-slate-100' };
+                        return `
                     <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 ${isCompleted ? 'border-green-500 opacity-70' : style.border}">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
@@ -580,20 +672,20 @@
                             </div>
                         </div>
                     </div>`;
-                }).join('')}
+                    }).join('')}
             </div>`;
-        
-        document.getElementById('task-search-input').oninput = (e) => {
-            state.taskSearchTerm = e.target.value;
-            renderTasksView();
-        };
-    }
-    
-    function renderAgendaView() {
-        const view = document.getElementById('agenda-view');
-        const sortedEvents = [...state.events].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
-        view.innerHTML = `
+            document.getElementById('task-search-input').oninput = (e) => {
+                state.taskSearchTerm = e.target.value;
+                renderTasksView();
+            };
+        }
+
+        function renderAgendaView() {
+            const view = document.getElementById('agenda-view');
+            const sortedEvents = [...state.events].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+            view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-xl font-bold">Agenda Compartilhada</h2>
                 <button onclick="openEventModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -602,12 +694,12 @@
                 </button>
             </header>
             <div id="event-list" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
-                ${sortedEvents.length === 0 ? `<div class="text-center text-slate-500 mt-8"><p>Nenhum evento na agenda.</p></div>` : 
-                sortedEvents.map(event => {
-                    const eventDate = new Date(event.dateTime);
-                    const day = String(eventDate.getDate()).padStart(2, '0');
-                    const month = eventDate.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
-                    return `
+                ${sortedEvents.length === 0 ? `<div class="text-center text-slate-500 mt-8"><p>Nenhum evento na agenda.</p></div>` :
+                    sortedEvents.map(event => {
+                        const eventDate = new Date(event.dateTime);
+                        const day = String(eventDate.getDate()).padStart(2, '0');
+                        const month = eventDate.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
+                        return `
                     <div class="bg-white p-4 rounded-lg shadow-sm flex gap-4 items-start">
                         <div class="flex-shrink-0 text-center bg-slate-100 p-3 rounded-lg w-20">
                             <p class="text-2xl font-bold text-blue-600">${day}</p>
@@ -627,13 +719,13 @@
                             <p class="text-slate-600 mt-2">${event.description || ''}</p>
                         </div>
                     </div>`;
-                }).join('')}
+                    }).join('')}
             </div>`;
-    }
+        }
 
-    function renderTagsView() {
-        const view = document.getElementById('tags-view');
-        view.innerHTML = `
+        function renderTagsView() {
+            const view = document.getElementById('tags-view');
+            view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-xl font-bold">Gerenciar Tags</h2>
                 <button onclick="openCreateTagModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Nova Tag</button>
@@ -641,9 +733,9 @@
             <div class="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 ${state.tags.length === 0 ? `<div class="col-span-full text-center text-slate-500 mt-8"><p>Nenhuma tag criada.</p></div>` :
-                state.tags.map(tag => {
-                    const colorClasses = tagColors[tag.color] || tagColors.gray;
-                    return `
+                    state.tags.map(tag => {
+                        const colorClasses = tagColors[tag.color] || tagColors.gray;
+                        return `
                     <div class="bg-white p-4 rounded-lg shadow-sm flex flex-col items-center justify-center text-center">
                         <span class="font-semibold px-3 py-1 rounded-full ${colorClasses.bg} ${colorClasses.text}">${tag.name}</span>
                         <div class="flex items-center gap-2 mt-4">
@@ -655,14 +747,14 @@
                             </button>
                         </div>
                     </div>`;
-                }).join('')}
+                    }).join('')}
                 </div>
             </div>`;
-    }
+        }
 
-    function renderSettingsView() {
-        const view = document.getElementById('settings-view');
-        view.innerHTML = `
+        function renderSettingsView() {
+            const view = document.getElementById('settings-view');
+            view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex-shrink-0"><h2 class="text-xl font-bold">Ajustes da Conta</h2></header>
             <div class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar">
                 <div class="max-w-lg mx-auto space-y-8">
@@ -683,54 +775,54 @@
                     </div>
                 </div>
             </div>`;
-        
-        document.getElementById('update-password-form').addEventListener('submit', handleUpdatePassword);
-    }
 
-    // ===================================================================================
-    // AÇÕES E MODAIS
-    // ===================================================================================
-
-    async function sendMessage() {
-        const input = document.getElementById('message-input');
-        const text = input.value.trim();
-
-        if (!text && newMessageAttachments.tags.length === 0 && !newMessageAttachments.linkedTask && !newMessageAttachments.linkedEvent && !newMessageReply) {
-            return;
+            document.getElementById('update-password-form').addEventListener('submit', handleUpdatePassword);
         }
 
-        let messageCollectionRef;
-        if (state.chatMode === 'private') {
-            const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
-            messageCollectionRef = collection(db, "private_chats", chatId, "messages");
-        } else {
-            messageCollectionRef = collection(db, "messages");
+        // ===================================================================================
+        // AÇÕES E MODAIS
+        // ===================================================================================
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+
+            if (!text && newMessageAttachments.tags.length === 0 && !newMessageAttachments.linkedTask && !newMessageAttachments.linkedEvent && !newMessageReply) {
+                return;
+            }
+
+            let messageCollectionRef;
+            if (state.chatMode === 'private') {
+                const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+                messageCollectionRef = collection(db, "private_chats", chatId, "messages");
+            } else {
+                messageCollectionRef = collection(db, "messages");
+            }
+
+            const messageData = {
+                sender: state.currentUser,
+                text: text,
+                timestamp: serverTimestamp(),
+                ...newMessageAttachments,
+                replyTo: newMessageReply,
+            };
+
+            if (state.chatMode === 'private') {
+                messageData.readBy = [state.currentUser];
+            }
+
+            await addDoc(messageCollectionRef, messageData);
+
+            input.value = '';
+            newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
+            newMessageReply = null;
+            updateAttachmentsPreview();
+            updateReplyPreview();
         }
 
-        const messageData = {
-            sender: state.currentUser,
-            text: text,
-            timestamp: serverTimestamp(),
-            ...newMessageAttachments,
-            replyTo: newMessageReply,
-        };
-        
-        if (state.chatMode === 'private') {
-            messageData.readBy = [state.currentUser];
-        }
-
-        await addDoc(messageCollectionRef, messageData);
-        
-        input.value = '';
-        newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
-        newMessageReply = null;
-        updateAttachmentsPreview();
-        updateReplyPreview();
-    }
-    
-    function openAttachmentMenu() {
-        const modalContainer = document.getElementById('modal-container');
-        modalContainer.innerHTML = `
+        function openAttachmentMenu() {
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
             <div id="attachment-menu-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xs modal-enter">
                     <h3 class="text-lg font-bold mb-4 text-center">Anexar à Mensagem</h3>
@@ -742,23 +834,23 @@
                     </div>
                 </div>
             </div>`;
-    }
+        }
 
-    window.openTagSelectionModal = () => {
-        closeModal();
-        const modalContainer = document.getElementById('modal-container');
-        
-        let tagListHTML = state.tags.length > 0 
-            ? state.tags.map(tag => {
-                const colorClasses = tagColors[tag.color] || tagColors.gray;
-                return `<li onclick="selectTagForMessage('${tag.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center gap-2">
+        window.openTagSelectionModal = () => {
+            closeModal();
+            const modalContainer = document.getElementById('modal-container');
+
+            let tagListHTML = state.tags.length > 0
+                ? state.tags.map(tag => {
+                    const colorClasses = tagColors[tag.color] || tagColors.gray;
+                    return `<li onclick="selectTagForMessage('${tag.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center gap-2">
                             <span class="w-4 h-4 rounded-full ${colorClasses.bg}"></span>
                             <span>${tag.name}</span>
                         </li>`
-              }).join('')
-            : `<li class="p-3 text-slate-500">Nenhuma tag criada. Vá para a tela de Tags para criar uma.</li>`;
+                }).join('')
+                : `<li class="p-3 text-slate-500">Nenhuma tag criada. Vá para a tela de Tags para criar uma.</li>`;
 
-        modalContainer.innerHTML = `
+            modalContainer.innerHTML = `
             <div id="tag-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
                     <h3 class="text-lg font-bold mb-4">Selecionar Tag</h3>
@@ -766,90 +858,90 @@
                     <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Fechar</button>
                 </div>
             </div>`;
-    }
-
-    window.selectTagForMessage = (tagId) => {
-        const tag = state.tags.find(t => t.id === tagId);
-        if (tag && !newMessageAttachments.tags.some(t => t.id === tagId)) {
-            newMessageAttachments.tags.push({ id: tag.id, name: tag.name, color: tag.color });
-            updateAttachmentsPreview();
         }
-        closeModal();
-    }
 
-    async function handleUpdatePassword(e) {
-        e.preventDefault();
-        const currentPassword = document.getElementById('current-password').value;
-        const newPassword = document.getElementById('new-password').value;
-        const messageP = document.getElementById('update-password-message');
-        messageP.textContent = '';
+        window.selectTagForMessage = (tagId) => {
+            const tag = state.tags.find(t => t.id === tagId);
+            if (tag && !newMessageAttachments.tags.some(t => t.id === tagId)) {
+                newMessageAttachments.tags.push({ id: tag.id, name: tag.name, color: tag.color });
+                updateAttachmentsPreview();
+            }
+            closeModal();
+        }
 
-        if (!state.currentUser) return;
+        async function handleUpdatePassword(e) {
+            e.preventDefault();
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const messageP = document.getElementById('update-password-message');
+            messageP.textContent = '';
 
-        const userDocRef = doc(db, "users", state.currentUser);
+            if (!state.currentUser) return;
 
-        try {
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists() && userDoc.data().password === currentPassword) {
-                await updateDoc(userDocRef, { password: newPassword });
-                messageP.textContent = 'Senha atualizada com sucesso!';
-                messageP.className = 'text-green-600 text-sm mb-4';
-                e.target.reset();
-            } else {
-                messageP.textContent = 'A senha atual está incorreta.';
+            const userDocRef = doc(db, "users", state.currentUser);
+
+            try {
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists() && userDoc.data().password === currentPassword) {
+                    await updateDoc(userDocRef, { password: newPassword });
+                    messageP.textContent = 'Senha atualizada com sucesso!';
+                    messageP.className = 'text-green-600 text-sm mb-4';
+                    e.target.reset();
+                } else {
+                    messageP.textContent = 'A senha atual está incorreta.';
+                    messageP.className = 'text-red-600 text-sm mb-4';
+                }
+            } catch (error) {
+                console.error("Update password error:", error);
+                messageP.textContent = 'Ocorreu um erro ao tentar atualizar a senha.';
                 messageP.className = 'text-red-600 text-sm mb-4';
             }
-        } catch (error) {
-            console.error("Update password error:", error);
-            messageP.textContent = 'Ocorreu um erro ao tentar atualizar a senha.';
-            messageP.className = 'text-red-600 text-sm mb-4';
-        }
-    }
-    
-    function updateAttachmentsPreview() {
-        const previewContainer = document.getElementById('attachments-preview');
-        if (!previewContainer) return;
-
-        let previewHTML = '';
-        if (newMessageAttachments.tags.length > 0) {
-            previewHTML += newMessageAttachments.tags.map(tag => {
-                const colorClasses = tagColors[tag.color] || tagColors.gray;
-                return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full mr-1">${tag.name}</span>`
-            }).join('');
-        }
-        if (newMessageAttachments.linkedTask) {
-            previewHTML += `<span class="text-sm p-1 bg-slate-200 rounded">Tarefa: ${newMessageAttachments.linkedTask.description}</span>`;
-        }
-        if (newMessageAttachments.linkedEvent) {
-            previewHTML += `<span class="text-sm p-1 bg-slate-200 rounded">Evento: ${newMessageAttachments.linkedEvent.title}</span>`;
         }
 
-        if (previewHTML) {
-            previewContainer.innerHTML = previewHTML + `<button onclick="clearAttachments()" class="ml-2 text-red-500 font-bold">X</button>`;
-            previewContainer.style.display = 'block';
-        } else {
-            previewContainer.innerHTML = '';
-            previewContainer.style.display = 'none';
+        function updateAttachmentsPreview() {
+            const previewContainer = document.getElementById('attachments-preview');
+            if (!previewContainer) return;
+
+            let previewHTML = '';
+            if (newMessageAttachments.tags.length > 0) {
+                previewHTML += newMessageAttachments.tags.map(tag => {
+                    const colorClasses = tagColors[tag.color] || tagColors.gray;
+                    return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full mr-1">${tag.name}</span>`
+                }).join('');
+            }
+            if (newMessageAttachments.linkedTask) {
+                previewHTML += `<span class="text-sm p-1 bg-slate-200 rounded">Tarefa: ${newMessageAttachments.linkedTask.description}</span>`;
+            }
+            if (newMessageAttachments.linkedEvent) {
+                previewHTML += `<span class="text-sm p-1 bg-slate-200 rounded">Evento: ${newMessageAttachments.linkedEvent.title}</span>`;
+            }
+
+            if (previewHTML) {
+                previewContainer.innerHTML = previewHTML + `<button onclick="clearAttachments()" class="ml-2 text-red-500 font-bold">X</button>`;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.innerHTML = '';
+                previewContainer.style.display = 'none';
+            }
         }
-    }
 
-    window.clearAttachments = () => {
-        newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
-        updateAttachmentsPreview();
-    }
+        window.clearAttachments = () => {
+            newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
+            updateAttachmentsPreview();
+        }
 
-    window.openCreateTagModal = (tagId = null) => {
-        const existingTag = tagId ? state.tags.find(t => t.id === tagId) : null;
-        const modalContainer = document.getElementById('modal-container');
+        window.openCreateTagModal = (tagId = null) => {
+            const existingTag = tagId ? state.tags.find(t => t.id === tagId) : null;
+            const modalContainer = document.getElementById('modal-container');
 
-        const colorOptionsHTML = Object.entries(tagColors).map(([colorName, classes]) => `
+            const colorOptionsHTML = Object.entries(tagColors).map(([colorName, classes]) => `
             <div>
                 <input type="radio" name="tag-color" id="color-${colorName}" value="${colorName}" class="sr-only" ${existingTag?.color === colorName ? 'checked' : ''}>
                 <label for="color-${colorName}" style="--tw-ring-color: ${colorName === 'gray' ? '#64748b' : `var(--tw-color-${colorName}-500)`}" class="block w-8 h-8 rounded-full cursor-pointer transition-transform ${classes.bg} ring-offset-2"></label>
             </div>
         `).join('');
 
-        modalContainer.innerHTML = `
+            modalContainer.innerHTML = `
             <div id="create-tag-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm modal-enter">
                     <h3 class="text-lg font-bold mb-4">${existingTag ? 'Editar Tag' : 'Criar Nova Tag'}</h3>
@@ -870,41 +962,41 @@
                     </form>
                 </div>
             </div>`;
-        
-        document.getElementById('create-tag-form').onsubmit = handleTagFormSubmit;
-    }
 
-    async function handleTagFormSubmit(e) {
-        e.preventDefault();
-        const tagId = document.getElementById('tag-id').value;
-        const tagName = document.getElementById('tag-name').value.trim();
-        const selectedColor = document.querySelector('input[name="tag-color"]:checked')?.value;
-
-        if (!tagName || !selectedColor) {
-            alert('Por favor, preencha o nome e selecione uma cor.');
-            return;
+            document.getElementById('create-tag-form').onsubmit = handleTagFormSubmit;
         }
 
-        const tagData = { name: tagName, color: selectedColor };
+        async function handleTagFormSubmit(e) {
+            e.preventDefault();
+            const tagId = document.getElementById('tag-id').value;
+            const tagName = document.getElementById('tag-name').value.trim();
+            const selectedColor = document.querySelector('input[name="tag-color"]:checked')?.value;
 
-        if (tagId) {
-            await updateDoc(doc(db, "tags", tagId), tagData);
-        } else {
-            await addDoc(collection(db, "tags"), tagData);
+            if (!tagName || !selectedColor) {
+                alert('Por favor, preencha o nome e selecione uma cor.');
+                return;
+            }
+
+            const tagData = { name: tagName, color: selectedColor };
+
+            if (tagId) {
+                await updateDoc(doc(db, "tags", tagId), tagData);
+            } else {
+                await addDoc(collection(db, "tags"), tagData);
+            }
+            closeModal();
         }
-        closeModal();
-    }
 
-    window.deleteTag = (tagId) => {
-        showConfirmModal('Tem certeza que deseja excluir esta tag?', async () => {
-            await deleteDoc(doc(db, "tags", tagId));
-        });
-    }
+        window.deleteTag = (tagId) => {
+            showConfirmModal('Tem certeza que deseja excluir esta tag?', async () => {
+                await deleteDoc(doc(db, "tags", tagId));
+            });
+        }
 
-    window.openTaskModal = (taskId = null) => {
-        const modalContainer = document.getElementById('modal-container');
-        const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
-        modalContainer.innerHTML = `
+        window.openTaskModal = (taskId = null) => {
+            const modalContainer = document.getElementById('modal-container');
+            const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
+            modalContainer.innerHTML = `
             <div id="task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-40">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
                     <h3 class="text-xl font-bold mb-4">${task ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
@@ -935,54 +1027,54 @@
                     </form>
                 </div>
             </div>`;
-        
-        document.getElementById('task-form').onsubmit = handleTaskFormSubmit;
-    }
 
-    async function handleTaskFormSubmit(event) {
-        event.preventDefault();
-        const id = document.getElementById('task-id').value;
-        const description = document.getElementById('task-description').value;
-        const deadline = document.getElementById('task-deadline').value;
-        const priority = document.getElementById('task-priority').value;
-
-        const data = {
-            description,
-            deadline: new Date(deadline).toISOString().split('T')[0] + 'T23:59:59.999Z',
-            priority,
-        };
-
-        if (id) {
-            await updateDoc(doc(db, "tasks", id), data);
-        } else {
-            data.completed = false;
-            data.createdAt = serverTimestamp();
-            data.createdBy = state.currentUser;
-            await addDoc(collection(db, "tasks"), data);
+            document.getElementById('task-form').onsubmit = handleTaskFormSubmit;
         }
-        closeModal();
-    }
 
-    window.deleteTask = (taskId) => {
-        showConfirmModal('Tem certeza que deseja excluir esta tarefa?', async () => {
-            await deleteDoc(doc(db, "tasks", taskId));
-        });
-    }
+        async function handleTaskFormSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('task-id').value;
+            const description = document.getElementById('task-description').value;
+            const deadline = document.getElementById('task-deadline').value;
+            const priority = document.getElementById('task-priority').value;
 
-    window.toggleTaskStatus = async (taskId, currentStatus) => {
-        const updateData = {
-            completed: !currentStatus,
-            completedBy: !currentStatus ? state.currentUser : null,
-        };
-        await updateDoc(doc(db, "tasks", taskId), updateData);
-    }
+            const data = {
+                description,
+                deadline: new Date(deadline).toISOString().split('T')[0] + 'T23:59:59.999Z',
+                priority,
+            };
 
-    window.openEventModal = (eventId = null) => {
-        const modalContainer = document.getElementById('modal-container');
-        const event = eventId ? state.events.find(e => e.id === eventId) : null;
-        const eventDate = event ? new Date(event.dateTime) : null;
+            if (id) {
+                await updateDoc(doc(db, "tasks", id), data);
+            } else {
+                data.completed = false;
+                data.createdAt = serverTimestamp();
+                data.createdBy = state.currentUser;
+                await addDoc(collection(db, "tasks"), data);
+            }
+            closeModal();
+        }
 
-        modalContainer.innerHTML = `
+        window.deleteTask = (taskId) => {
+            showConfirmModal('Tem certeza que deseja excluir esta tarefa?', async () => {
+                await deleteDoc(doc(db, "tasks", taskId));
+            });
+        }
+
+        window.toggleTaskStatus = async (taskId, currentStatus) => {
+            const updateData = {
+                completed: !currentStatus,
+                completedBy: !currentStatus ? state.currentUser : null,
+            };
+            await updateDoc(doc(db, "tasks", taskId), updateData);
+        }
+
+        window.openEventModal = (eventId = null) => {
+            const modalContainer = document.getElementById('modal-container');
+            const event = eventId ? state.events.find(e => e.id === eventId) : null;
+            const eventDate = event ? new Date(event.dateTime) : null;
+
+            modalContainer.innerHTML = `
             <div id="event-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-40">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
                     <h3 class="text-xl font-bold mb-4">${event ? 'Editar Evento' : 'Novo Evento'}</h3>
@@ -1013,41 +1105,41 @@
                     </form>
                 </div>
             </div>`;
-        
-        document.getElementById('event-form').onsubmit = handleEventFormSubmit;
-    }
 
-    async function handleEventFormSubmit(event) {
-        event.preventDefault();
-        const id = document.getElementById('event-id').value;
-        const title = document.getElementById('event-title').value;
-        const description = document.getElementById('event-description').value;
-        const date = document.getElementById('event-date').value;
-        const time = document.getElementById('event-time').value;
-
-        const data = {
-            title,
-            description,
-            dateTime: new Date(`${date}T${time}`).toISOString()
-        };
-
-        if (id) {
-            await updateDoc(doc(db, "agenda", id), data);
-        } else {
-            await addDoc(collection(db, "agenda"), data);
+            document.getElementById('event-form').onsubmit = handleEventFormSubmit;
         }
-        closeModal();
-    }
 
-    window.deleteEvent = (eventId) => {
-        showConfirmModal('Tem certeza que deseja excluir este evento?', async () => {
-            await deleteDoc(doc(db, "agenda", eventId));
-        });
-    }
-    
-    function showConfirmModal(message, onConfirm) {
-        const modalContainer = document.getElementById('modal-container');
-        modalContainer.innerHTML = `
+        async function handleEventFormSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('event-id').value;
+            const title = document.getElementById('event-title').value;
+            const description = document.getElementById('event-description').value;
+            const date = document.getElementById('event-date').value;
+            const time = document.getElementById('event-time').value;
+
+            const data = {
+                title,
+                description,
+                dateTime: new Date(`${date}T${time}`).toISOString()
+            };
+
+            if (id) {
+                await updateDoc(doc(db, "agenda", id), data);
+            } else {
+                await addDoc(collection(db, "agenda"), data);
+            }
+            closeModal();
+        }
+
+        window.deleteEvent = (eventId) => {
+            showConfirmModal('Tem certeza que deseja excluir este evento?', async () => {
+                await deleteDoc(doc(db, "agenda", eventId));
+            });
+        }
+
+        function showConfirmModal(message, onConfirm) {
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
             <div id="confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm modal-enter text-center">
                     <p class="text-lg mb-6">${message}</p>
@@ -1058,20 +1150,20 @@
                 </div>
             </div>`;
 
-        document.getElementById('confirm-ok').onclick = () => {
-            onConfirm();
-            closeModal();
-        };
-    }
+            document.getElementById('confirm-ok').onclick = () => {
+                onConfirm();
+                closeModal();
+            };
+        }
 
-    window.openMessageActions = (messageId) => {
-        const msg = state.messages.find(m => m.id === messageId);
-        if (!msg) return;
+        window.openMessageActions = (messageId) => {
+            const msg = state.messages.find(m => m.id === messageId);
+            if (!msg) return;
 
-        const modalContainer = document.getElementById('modal-container');
-        const canDelete = msg.sender === state.currentUser;
-        
-        modalContainer.innerHTML = `
+            const modalContainer = document.getElementById('modal-container');
+            const canDelete = msg.sender === state.currentUser;
+
+            modalContainer.innerHTML = `
             <div id="message-actions-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-2 w-full max-w-xs modal-enter">
                     <ul class="flex flex-col">
@@ -1081,40 +1173,40 @@
                     </ul>
                 </div>
             </div>`;
-    }
-
-    window.replyToMessage = (messageId) => {
-        const msg = state.messages.find(m => m.id === messageId);
-        if (msg) {
-            newMessageReply = {
-                id: msg.id,
-                sender: msg.sender,
-                text: msg.text || 'Anexo'
-            };
-            updateReplyPreview();
         }
-        closeModal();
-    }
 
-    window.deleteMessage = (messageId) => {
-        showConfirmModal('Tem certeza que deseja apagar esta mensagem?', async () => {
-            let messageRef;
-            if (state.chatMode === 'private') {
-                const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
-                messageRef = doc(db, "private_chats", chatId, "messages", messageId);
-            } else {
-                messageRef = doc(db, "messages", messageId);
+        window.replyToMessage = (messageId) => {
+            const msg = state.messages.find(m => m.id === messageId);
+            if (msg) {
+                newMessageReply = {
+                    id: msg.id,
+                    sender: msg.sender,
+                    text: msg.text || 'Anexo'
+                };
+                updateReplyPreview();
             }
-            await deleteDoc(messageRef);
-        });
-    }
+            closeModal();
+        }
 
-    function updateReplyPreview() {
-        const previewContainer = document.getElementById('reply-preview');
-        if (!previewContainer) return;
+        window.deleteMessage = (messageId) => {
+            showConfirmModal('Tem certeza que deseja apagar esta mensagem?', async () => {
+                let messageRef;
+                if (state.chatMode === 'private') {
+                    const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+                    messageRef = doc(db, "private_chats", chatId, "messages", messageId);
+                } else {
+                    messageRef = doc(db, "messages", messageId);
+                }
+                await deleteDoc(messageRef);
+            });
+        }
 
-        if (newMessageReply) {
-            previewContainer.innerHTML = `
+        function updateReplyPreview() {
+            const previewContainer = document.getElementById('reply-preview');
+            if (!previewContainer) return;
+
+            if (newMessageReply) {
+                previewContainer.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div class="border-l-2 border-blue-500 pl-2">
                         <p class="font-bold text-sm text-slate-600">${newMessageReply.sender}</p>
@@ -1122,73 +1214,73 @@
                     </div>
                     <button onclick="clearReply()" class="font-bold text-red-500">X</button>
                 </div>`;
-            previewContainer.style.display = 'block';
-        } else {
-            previewContainer.innerHTML = '';
-            previewContainer.style.display = 'none';
-        }
-    }
-
-    window.clearReply = () => {
-        newMessageReply = null;
-        updateReplyPreview();
-    }
-
-    async function checkForMessageCleanup() {
-        const today = new Date().toLocaleDateString();
-        const metaRef = doc(db, "app_meta", "cleanup_tracker");
-
-        try {
-            const metaDoc = await getDoc(metaRef);
-            let lastCleanup = '';
-
-            if (metaDoc.exists()) {
-                lastCleanup = metaDoc.data().lastCleanupDate;
+                previewContainer.style.display = 'block';
             } else {
-                await setDoc(metaRef, { lastCleanupDate: today });
-                console.log("Rastreador de limpeza inicializado.");
-                return;
+                previewContainer.innerHTML = '';
+                previewContainer.style.display = 'none';
             }
+        }
 
-            if (lastCleanup !== today) {
-                console.log("Novo dia detectado, limpando todas as conversas...");
-                
-                // Limpar chat geral
-                const messagesRef = collection(db, "messages");
-                const generalSnapshot = await getDocs(messagesRef);
-                const deletePromises = [];
-                generalSnapshot.forEach(doc => deletePromises.push(deleteDoc(doc.ref)));
+        window.clearReply = () => {
+            newMessageReply = null;
+            updateReplyPreview();
+        }
 
-                // Limpar chats privados
-                const privateChatsRef = collection(db, "private_chats");
-                const privateChatsSnapshot = await getDocs(privateChatsRef);
-                for (const chatDoc of privateChatsSnapshot.docs) {
-                    const privateMessagesRef = collection(db, "private_chats", chatDoc.id, "messages");
-                    const privateMessagesSnapshot = await getDocs(privateMessagesRef);
-                    privateMessagesSnapshot.forEach(doc => deletePromises.push(deleteDoc(doc.ref)));
+        async function checkForMessageCleanup() {
+            const today = new Date().toLocaleDateString();
+            const metaRef = doc(db, "app_meta", "cleanup_tracker");
+
+            try {
+                const metaDoc = await getDoc(metaRef);
+                let lastCleanup = '';
+
+                if (metaDoc.exists()) {
+                    lastCleanup = metaDoc.data().lastCleanupDate;
+                } else {
+                    await setDoc(metaRef, { lastCleanupDate: today });
+                    console.log("Rastreador de limpeza inicializado.");
+                    return;
                 }
 
-                await Promise.all(deletePromises);
-                
-                await updateDoc(metaRef, { lastCleanupDate: today });
-                console.log("Todas as mensagens antigas foram apagadas e data de limpeza atualizada.");
+                if (lastCleanup !== today) {
+                    console.log("Novo dia detectado, limpando todas as conversas...");
+
+                    // Limpar chat geral
+                    const messagesRef = collection(db, "messages");
+                    const generalSnapshot = await getDocs(messagesRef);
+                    const deletePromises = [];
+                    generalSnapshot.forEach(doc => deletePromises.push(deleteDoc(doc.ref)));
+
+                    // Limpar chats privados
+                    const privateChatsRef = collection(db, "private_chats");
+                    const privateChatsSnapshot = await getDocs(privateChatsRef);
+                    for (const chatDoc of privateChatsSnapshot.docs) {
+                        const privateMessagesRef = collection(db, "private_chats", chatDoc.id, "messages");
+                        const privateMessagesSnapshot = await getDocs(privateMessagesRef);
+                        privateMessagesSnapshot.forEach(doc => deletePromises.push(deleteDoc(doc.ref)));
+                    }
+
+                    await Promise.all(deletePromises);
+
+                    await updateDoc(metaRef, { lastCleanupDate: today });
+                    console.log("Todas as mensagens antigas foram apagadas e data de limpeza atualizada.");
+                }
+            } catch (error) {
+                console.error("Erro no processo de limpeza de mensagens:", error);
             }
-        } catch (error) {
-            console.error("Erro no processo de limpeza de mensagens:", error);
         }
-    }
 
-    window.openPrivateChatSelectionModal = () => {
-        const modalContainer = document.getElementById('modal-container');
-        const otherCoordinators = ['Coordenação A', 'Coordenação D', 'Coordenação R'].filter(c => c !== state.currentUser);
+        window.openPrivateChatSelectionModal = () => {
+            const modalContainer = document.getElementById('modal-container');
+            const otherCoordinators = ['Coordenação A', 'Coordenação D', 'Coordenação R'].filter(c => c !== state.currentUser);
 
-        const buttonsHTML = otherCoordinators.map(name => {
-            const hasUnread = state.unreadChats.includes(name);
-            const unreadIndicator = hasUnread ? `<span class="w-2 h-2 bg-red-500 rounded-full"></span>` : '';
-            return `<button onclick="startPrivateChat('${name}')" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg flex items-center justify-between"><span>${name}</span> ${unreadIndicator}</button>`
-        }).join('');
+            const buttonsHTML = otherCoordinators.map(name => {
+                const hasUnread = state.unreadChats.includes(name);
+                const unreadIndicator = hasUnread ? `<span class="w-2 h-2 bg-red-500 rounded-full"></span>` : '';
+                return `<button onclick="startPrivateChat('${name}')" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg flex items-center justify-between"><span>${name}</span> ${unreadIndicator}</button>`
+            }).join('');
 
-        modalContainer.innerHTML = `
+            modalContainer.innerHTML = `
             <div id="private-chat-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xs modal-enter">
                     <h3 class="text-lg font-bold mb-4 text-center">Iniciar Conversa Com</h3>
@@ -1198,85 +1290,85 @@
                     </div>
                 </div>
             </div>`;
-    }
+        }
 
-    window.startPrivateChat = async (partnerName) => {
-        state.chatMode = 'private';
-        state.privateChatPartner = partnerName;
-        state.messages = []; // Limpa mensagens antigas
-        await markMessagesAsRead();
-        await checkForUnreadMessages(); // Re-checa para remover o indicador
-        setupFirestoreListeners(); // Reativa o listener para o chat privado
-        closeModal();
-        renderChatView(); // Renderiza a view do chat imediatamente
-    }
+        window.startPrivateChat = async (partnerName) => {
+            state.chatMode = 'private';
+            state.privateChatPartner = partnerName;
+            state.messages = []; // Limpa mensagens antigas
+            await markMessagesAsRead();
+            await checkForUnreadMessages(); // Re-checa para remover o indicador
+            setupFirestoreListeners(); // Reativa o listener para o chat privado
+            closeModal();
+            renderChatView(); // Renderiza a view do chat imediatamente
+        }
 
-    window.switchToGeneralChat = () => {
-        state.chatMode = 'general';
-        state.privateChatPartner = null;
-        state.messages = []; // Limpa mensagens antigas
-        setupFirestoreListeners(); // Reativa o listener para o chat geral
-        renderChatView();
-    }
+        window.switchToGeneralChat = () => {
+            state.chatMode = 'general';
+            state.privateChatPartner = null;
+            state.messages = []; // Limpa mensagens antigas
+            setupFirestoreListeners(); // Reativa o listener para o chat geral
+            renderChatView();
+        }
 
-    async function checkForUnreadMessages() {
-        const otherCoordinators = ['Coordenação A', 'Coordenação D', 'Coordenação R'].filter(c => c !== state.currentUser);
-        const unreadFrom = new Set();
+        async function checkForUnreadMessages() {
+            const otherCoordinators = ['Coordenação A', 'Coordenação D', 'Coordenação R'].filter(c => c !== state.currentUser);
+            const unreadFrom = new Set();
 
-        for (const partner of otherCoordinators) {
-            const chatId = [state.currentUser, partner].sort().join('_');
+            for (const partner of otherCoordinators) {
+                const chatId = [state.currentUser, partner].sort().join('_');
+                const messagesRef = collection(db, "private_chats", chatId, "messages");
+                const q = query(messagesRef, where("sender", "==", partner));
+
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    if (!msg.readBy || !msg.readBy.includes(state.currentUser)) {
+                        unreadFrom.add(partner);
+                    }
+                });
+            }
+            state.unreadChats = Array.from(unreadFrom);
+        }
+
+        async function markMessagesAsRead() {
+            if (state.chatMode !== 'private' || !state.privateChatPartner) return;
+
+            const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
             const messagesRef = collection(db, "private_chats", chatId, "messages");
-            const q = query(messagesRef, where("sender", "==", partner));
-            
+
+            const q = query(messagesRef, where("sender", "==", state.privateChatPartner));
+
             const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                const msg = doc.data();
+            const batch = writeBatch(db);
+            let updatesMade = false;
+
+            snapshot.forEach(docSnapshot => {
+                const msg = docSnapshot.data();
                 if (!msg.readBy || !msg.readBy.includes(state.currentUser)) {
-                    unreadFrom.add(partner);
+                    batch.update(docSnapshot.ref, {
+                        readBy: arrayUnion(state.currentUser)
+                    });
+                    updatesMade = true;
                 }
             });
-        }
-        state.unreadChats = Array.from(unreadFrom);
-    }
 
-    async function markMessagesAsRead() {
-        if (state.chatMode !== 'private' || !state.privateChatPartner) return;
-
-        const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
-        const messagesRef = collection(db, "private_chats", chatId, "messages");
-        
-        const q = query(messagesRef, where("sender", "==", state.privateChatPartner));
-        
-        const snapshot = await getDocs(q);
-        const batch = writeBatch(db);
-        let updatesMade = false;
-
-        snapshot.forEach(docSnapshot => {
-            const msg = docSnapshot.data();
-            if (!msg.readBy || !msg.readBy.includes(state.currentUser)) {
-                batch.update(docSnapshot.ref, {
-                    readBy: arrayUnion(state.currentUser)
-                });
-                updatesMade = true;
+            if (updatesMade) {
+                await batch.commit();
+                console.log("Mensagens marcadas como lidas.");
             }
-        });
-
-        if (updatesMade) {
-            await batch.commit();
-            console.log("Mensagens marcadas como lidas.");
         }
-    }
 
-    window.openTaskSelectionModal = () => {
-        closeModal();
-        const modalContainer = document.getElementById('modal-container');
-        const pendingTasks = state.tasks.filter(t => !t.completed);
-        
-        let taskListHTML = pendingTasks.length > 0 
-            ? pendingTasks.map(task => `<li onclick="selectTask('${task.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">${task.description}</li>`).join('')
-            : `<li class="p-3 text-slate-500">Nenhuma tarefa pendente.</li>`;
+        window.openTaskSelectionModal = () => {
+            closeModal();
+            const modalContainer = document.getElementById('modal-container');
+            const pendingTasks = state.tasks.filter(t => !t.completed);
 
-        modalContainer.innerHTML = `
+            let taskListHTML = pendingTasks.length > 0
+                ? pendingTasks.map(task => `<li onclick="selectTask('${task.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">${task.description}</li>`).join('')
+                : `<li class="p-3 text-slate-500">Nenhuma tarefa pendente.</li>`;
+
+            modalContainer.innerHTML = `
             <div id="task-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
                     <h3 class="text-lg font-bold mb-4">Anexar Tarefa Pendente</h3>
@@ -1284,28 +1376,28 @@
                     <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Cancelar</button>
                 </div>
             </div>`;
-    }
-
-    window.selectTask = (taskId) => {
-        const task = state.tasks.find(t => t.id === taskId);
-        if (task) {
-            newMessageAttachments.linkedTask = { id: task.id, description: task.description };
-            newMessageAttachments.linkedEvent = null; // Só pode ter um ou outro
-            updateAttachmentsPreview();
         }
-        closeModal();
-    }
 
-    window.openEventSelectionModal = () => {
-        closeModal();
-        const modalContainer = document.getElementById('modal-container');
-        const upcomingEvents = state.events.filter(e => new Date(e.dateTime) >= new Date());
+        window.selectTask = (taskId) => {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                newMessageAttachments.linkedTask = { id: task.id, description: task.description };
+                newMessageAttachments.linkedEvent = null; // Só pode ter um ou outro
+                updateAttachmentsPreview();
+            }
+            closeModal();
+        }
 
-        let eventListHTML = upcomingEvents.length > 0
-            ? upcomingEvents.map(event => `<li onclick="selectEvent('${event.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">${event.title} (${formatDate(event.dateTime)})</li>`).join('')
-            : `<li class="p-3 text-slate-500">Nenhum evento futuro.</li>`;
+        window.openEventSelectionModal = () => {
+            closeModal();
+            const modalContainer = document.getElementById('modal-container');
+            const upcomingEvents = state.events.filter(e => new Date(e.dateTime) >= new Date());
 
-        modalContainer.innerHTML = `
+            let eventListHTML = upcomingEvents.length > 0
+                ? upcomingEvents.map(event => `<li onclick="selectEvent('${event.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">${event.title} (${formatDate(event.dateTime)})</li>`).join('')
+                : `<li class="p-3 text-slate-500">Nenhum evento futuro.</li>`;
+
+            modalContainer.innerHTML = `
             <div id="event-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
                     <h3 class="text-lg font-bold mb-4">Anexar Evento Futuro</h3>
@@ -1313,19 +1405,32 @@
                     <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Cancelar</button>
                 </div>
             </div>`;
-    }
-
-    window.selectEvent = (eventId) => {
-        const event = state.events.find(e => e.id === eventId);
-        if (event) {
-            newMessageAttachments.linkedEvent = { id: event.id, title: event.title };
-            newMessageAttachments.linkedTask = null; // Só pode ter um ou outro
-            updateAttachmentsPreview();
         }
-        closeModal();
-    }
-    
-</script>
+
+        window.selectEvent = (eventId) => {
+            const event = state.events.find(e => e.id === eventId);
+            if (event) {
+                newMessageAttachments.linkedEvent = { id: event.id, title: event.title };
+                newMessageAttachments.linkedTask = null; // Só pode ter um ou outro
+                updateAttachmentsPreview();
+            }
+            closeModal();
+        }
+
+    </script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
 
 </body>
+
 </html>
