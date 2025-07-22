@@ -138,7 +138,7 @@
     // Importações do Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, getDocs, setDoc, writeBatch, arrayUnion, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // ===================================================================================
     // CONFIGURAÇÃO E ESTADO GLOBAL
@@ -161,12 +161,17 @@
         currentUser: null,
         authReady: false,
         currentView: 'chat',
+        chatMode: 'general', // 'general' or 'private'
+        privateChatPartner: null,
         messages: [],
         tasks: [],
         events: [],
         tags: [],
         taskSearchTerm: '',
+        unreadChats: [], // Nomes dos parceiros com mensagens não lidas
     };
+    
+    let unsubscribeMessages = () => {}; // Função para parar de ouvir o chat atual
 
     let newMessageAttachments = {
         tags: [],
@@ -202,6 +207,7 @@
             const loggedInUser = sessionStorage.getItem('coordenacaoUser');
             if (loggedInUser) {
                 state.currentUser = loggedInUser;
+                await checkForUnreadMessages();
                 setupApp();
             } else {
                 document.getElementById('selection-container').classList.add('active');
@@ -266,6 +272,7 @@
                     state.currentUser = coordinatorName;
                     sessionStorage.setItem('coordenacaoUser', coordinatorName);
                     closeModal();
+                    await checkForUnreadMessages();
                     setupApp();
                 } else {
                     errorP.textContent = 'Senha incorreta.';
@@ -298,11 +305,23 @@
     // ===================================================================================
     
     function setupFirestoreListeners() {
-        onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "asc")), (snapshot) => {
+        // Cancelar listener anterior
+        unsubscribeMessages();
+
+        let messagesQuery;
+        if (state.chatMode === 'private') {
+            const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+            messagesQuery = query(collection(db, "private_chats", chatId, "messages"), orderBy("timestamp", "asc"));
+        } else {
+            messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+        }
+
+        unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
             state.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             if (state.currentView === 'chat') renderChatView();
         });
 
+        // Listeners que não mudam
         onSnapshot(query(collection(db, "tasks")), (snapshot) => {
             state.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             if (state.currentView === 'tasks') renderTasksView();
@@ -362,23 +381,33 @@
     // --- RENDER CHAT ---
     function renderChatView() {
         const view = document.getElementById('chat-view');
+        let headerHTML = '';
+        if (state.chatMode === 'private') {
+            headerHTML = `
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold">Conversa com ${state.privateChatPartner}</h2>
+                    <button onclick="switchToGeneralChat()" class="text-sm bg-slate-200 px-3 py-1 rounded-lg hover:bg-slate-300">Voltar ao Chat Geral</button>
+                </div>`;
+        } else {
+            const hasAnyUnread = state.unreadChats && state.unreadChats.length > 0;
+            const unreadIndicator = hasAnyUnread ? `<span class="w-2 h-2 bg-red-500 rounded-full absolute top-1 right-1"></span>` : '';
+            headerHTML = `
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold">Chat Secreto (Todos)</h2>
+                    <button onclick="openPrivateChatSelectionModal()" class="relative text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-200">
+                        Conversa Individual
+                        ${unreadIndicator}
+                    </button>
+                </div>`;
+        }
+
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200"><h2 class="text-xl font-bold">Chat Secreto</h2></header>
+            <header class="p-4 bg-white border-b border-slate-200">${headerHTML}</header>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                 ${state.messages.map(msg => {
                     const isCurrentUser = msg.sender === state.currentUser;
-                    const replyHTML = msg.replyTo 
-                        ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${isCurrentUser ? 'bg-blue-500 border-blue-300' : 'bg-slate-100 border-slate-300'}">
-                                <p class="font-bold text-sm ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${msg.replyTo.sender}</p>
-                                <p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p>
-                           </div>`
-                        : '';
-                    const tagsHTML = (msg.tags && msg.tags.length > 0) 
-                        ? `<div class="flex flex-wrap gap-2 mt-2">${msg.tags.map(tagData => {
-                            const colorClasses = tagColors[tagData.color] || tagColors.gray;
-                            return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full">${tagData.name}</span>`
-                          }).join('')}</div>`
-                        : '';
+                    const replyHTML = msg.replyTo ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${isCurrentUser ? 'bg-blue-500 border-blue-300' : 'bg-slate-100 border-slate-300'}"><p class="font-bold text-sm ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${msg.replyTo.sender}</p><p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p></div>` : '';
+                    const tagsHTML = (msg.tags && msg.tags.length > 0) ? `<div class="flex flex-wrap gap-2 mt-2">${msg.tags.map(tagData => { const colorClasses = tagColors[tagData.color] || tagColors.gray; return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full">${tagData.name}</span>` }).join('')}</div>` : '';
                     const taskHTML = msg.linkedTask ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">TAREFA VINCULADA</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedTask.description}</p></div>` : '';
                     const eventHTML = msg.linkedEvent ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">EVENTO VINCULADO</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedEvent.title}</p></div>` : '';
 
@@ -391,9 +420,7 @@
                             ${replyHTML}
                             <p class="font-bold text-sm mb-1 ${isCurrentUser ? 'text-blue-200' : 'text-teal-600'}">${msg.sender}</p>
                             ${msg.text ? `<p class="${isCurrentUser ? 'text-white' : 'text-slate-800'}">${msg.text}</p>` : ''}
-                            ${taskHTML}
-                            ${eventHTML}
-                            ${tagsHTML}
+                            ${taskHTML} ${eventHTML} ${tagsHTML}
                             <p class="text-xs mt-2 text-right opacity-75 ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${formatDateTime(msg.timestamp)}</p>
                         </div>
                     </div>`;
@@ -589,6 +616,14 @@
             return;
         }
 
+        let messageCollectionRef;
+        if (state.chatMode === 'private') {
+            const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+            messageCollectionRef = collection(db, "private_chats", chatId, "messages");
+        } else {
+            messageCollectionRef = collection(db, "messages");
+        }
+
         const messageData = {
             sender: state.currentUser,
             text: text,
@@ -596,8 +631,12 @@
             ...newMessageAttachments,
             replyTo: newMessageReply,
         };
+        
+        if (state.chatMode === 'private') {
+            messageData.readBy = [state.currentUser];
+        }
 
-        await addDoc(collection(db, "messages"), messageData);
+        await addDoc(messageCollectionRef, messageData);
         
         input.value = '';
         newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
@@ -976,7 +1015,14 @@
 
     window.deleteMessage = (messageId) => {
         showConfirmModal('Tem certeza que deseja apagar esta mensagem?', async () => {
-            await deleteDoc(doc(db, "messages", messageId));
+            let messageRef;
+            if (state.chatMode === 'private') {
+                const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+                messageRef = doc(db, "private_chats", chatId, "messages", messageId);
+            } else {
+                messageRef = doc(db, "messages", messageId);
+            }
+            await deleteDoc(messageRef);
         });
     }
 
@@ -1022,20 +1068,119 @@
             }
 
             if (lastCleanup !== today) {
-                console.log("Novo dia detectado, limpando mensagens...");
+                console.log("Novo dia detectado, limpando todas as conversas...");
+                
+                // Limpar chat geral
                 const messagesRef = collection(db, "messages");
-                const snapshot = await getDocs(messagesRef);
+                const generalSnapshot = await getDocs(messagesRef);
                 const deletePromises = [];
-                snapshot.forEach(doc => {
-                    deletePromises.push(deleteDoc(doc.ref));
-                });
+                generalSnapshot.forEach(doc => deletePromises.push(deleteDoc(doc.ref)));
+
+                // Limpar chats privados
+                const privateChatsRef = collection(db, "private_chats");
+                const privateChatsSnapshot = await getDocs(privateChatsRef);
+                for (const chatDoc of privateChatsSnapshot.docs) {
+                    const privateMessagesRef = collection(db, "private_chats", chatDoc.id, "messages");
+                    const privateMessagesSnapshot = await getDocs(privateMessagesRef);
+                    privateMessagesSnapshot.forEach(doc => deletePromises.push(deleteDoc(doc.ref)));
+                }
+
                 await Promise.all(deletePromises);
                 
                 await updateDoc(metaRef, { lastCleanupDate: today });
-                console.log("Mensagens antigas apagadas e data de limpeza atualizada.");
+                console.log("Todas as mensagens antigas foram apagadas e data de limpeza atualizada.");
             }
         } catch (error) {
             console.error("Erro no processo de limpeza de mensagens:", error);
+        }
+    }
+
+    window.openPrivateChatSelectionModal = () => {
+        const modalContainer = document.getElementById('modal-container');
+        const otherCoordinators = ['Coordenação A', 'Coordenação D', 'Coordenação R'].filter(c => c !== state.currentUser);
+
+        const buttonsHTML = otherCoordinators.map(name => {
+            const hasUnread = state.unreadChats.includes(name);
+            const unreadIndicator = hasUnread ? `<span class="w-2 h-2 bg-red-500 rounded-full"></span>` : '';
+            return `<button onclick="startPrivateChat('${name}')" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg flex items-center justify-between"><span>${name}</span> ${unreadIndicator}</button>`
+        }).join('');
+
+        modalContainer.innerHTML = `
+            <div id="private-chat-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xs modal-enter">
+                    <h3 class="text-lg font-bold mb-4 text-center">Iniciar Conversa Com</h3>
+                    <div class="flex flex-col gap-2">
+                        ${buttonsHTML}
+                        <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Cancelar</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    window.startPrivateChat = async (partnerName) => {
+        state.chatMode = 'private';
+        state.privateChatPartner = partnerName;
+        state.messages = []; // Limpa mensagens antigas
+        await markMessagesAsRead();
+        await checkForUnreadMessages(); // Re-checa para remover o indicador
+        setupFirestoreListeners(); // Reativa o listener para o chat privado
+        closeModal();
+        renderChatView(); // Renderiza a view do chat imediatamente
+    }
+
+    window.switchToGeneralChat = () => {
+        state.chatMode = 'general';
+        state.privateChatPartner = null;
+        state.messages = []; // Limpa mensagens antigas
+        setupFirestoreListeners(); // Reativa o listener para o chat geral
+        renderChatView();
+    }
+
+    async function checkForUnreadMessages() {
+        const otherCoordinators = ['Coordenação A', 'Coordenação D', 'Coordenação R'].filter(c => c !== state.currentUser);
+        const unreadFrom = new Set();
+
+        for (const partner of otherCoordinators) {
+            const chatId = [state.currentUser, partner].sort().join('_');
+            const messagesRef = collection(db, "private_chats", chatId, "messages");
+            const q = query(messagesRef, where("sender", "==", partner));
+            
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                if (!msg.readBy || !msg.readBy.includes(state.currentUser)) {
+                    unreadFrom.add(partner);
+                }
+            });
+        }
+        state.unreadChats = Array.from(unreadFrom);
+    }
+
+    async function markMessagesAsRead() {
+        if (state.chatMode !== 'private' || !state.privateChatPartner) return;
+
+        const chatId = [state.currentUser, state.privateChatPartner].sort().join('_');
+        const messagesRef = collection(db, "private_chats", chatId, "messages");
+        
+        const q = query(messagesRef, where("sender", "==", state.privateChatPartner));
+        
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        let updatesMade = false;
+
+        snapshot.forEach(docSnapshot => {
+            const msg = docSnapshot.data();
+            if (!msg.readBy || !msg.readBy.includes(state.currentUser)) {
+                batch.update(docSnapshot.ref, {
+                    readBy: arrayUnion(state.currentUser)
+                });
+                updatesMade = true;
+            }
+        });
+
+        if (updatesMade) {
+            await batch.commit();
+            console.log("Mensagens marcadas como lidas.");
         }
     }
     
