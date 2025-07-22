@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -90,10 +90,10 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 secure-overlay">
+<body class="bg-slate-100 text-slate-800 secure-overlay h-full overflow-hidden">
 
     <!-- Tela de Seleção de Usuário -->
-    <div id="selection-container" class="h-screen w-screen flex-col items-center justify-center p-4">
+    <div id="selection-container" class="h-full w-full flex-col items-center justify-center p-4">
         <div class="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg modal-enter">
             <h2 class="text-2xl font-bold text-center text-slate-800 mb-2">Quem está acessando?</h2>
             <p class="text-center text-slate-500 mb-6">Selecione seu perfil para continuar.</p>
@@ -106,11 +106,11 @@
     </div>
 
     <!-- Container Principal do App -->
-    <div id="app-container" class="h-screen w-screen flex-col md:flex-row">
+    <div id="app-container" class="h-full w-full flex flex-col md:flex-row">
         
-        <!-- Menu Lateral (Desktop) / Inferior (Mobile) -->
-        <nav class="bg-white md:w-64 flex md:flex-col justify-around md:justify-start md:p-4 shadow-lg border-t md:border-t-0 md:border-r border-slate-200 order-last md:order-first">
-            <div class="flex-col items-center hidden md:flex mb-6 p-4">
+        <!-- Menu Lateral (Desktop) -->
+        <nav class="bg-white md:w-64 flex-col justify-start p-4 shadow-lg border-r border-slate-200 hidden md:flex">
+            <div class="flex-col items-center flex mb-6 p-4">
                 <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
@@ -121,36 +121,62 @@
                 </button>
             </div>
             
-            <button onclick="switchView('chat')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="chat">
+            <button onclick="switchView('chat')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="chat">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <span class="text-sm md:text-base font-medium">Chat</span>
+                <span class="text-base font-medium">Chat</span>
             </button>
-            <button onclick="switchView('tasks')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="tasks">
+            <button onclick="switchView('tasks')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="tasks">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <span class="text-sm md:text-base font-medium">Tarefas</span>
+                <span class="text-base font-medium">Tarefas</span>
             </button>
-            <button onclick="switchView('agenda')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="agenda">
+            <button onclick="switchView('agenda')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="agenda">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                <span class="text-sm md:text-base font-medium">Agenda</span>
+                <span class="text-base font-medium">Agenda</span>
             </button>
-            <button onclick="switchView('tags')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="tags">
+            <button onclick="switchView('tags')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="tags">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z"/><path d="M9 9h.01"/></svg>
-                <span class="text-sm md:text-base font-medium">Tags</span>
+                <span class="text-base font-medium">Tags</span>
             </button>
-             <button onclick="switchView('settings')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="settings">
+             <button onclick="switchView('settings')" class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex" data-view="settings">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span class="text-sm md:text-base font-medium">Ajustes</span>
+                <span class="text-base font-medium">Ajustes</span>
             </button>
         </nav>
 
-        <!-- Conteúdo Principal -->
-        <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
-            <div id="chat-view" class="view flex-col h-full"></div>
-            <div id="tasks-view" class="view flex-col h-full"></div>
-            <div id="agenda-view" class="view flex-col h-full"></div>
-            <div id="tags-view" class="view flex-col h-full"></div>
-            <div id="settings-view" class="view flex-col h-full"></div>
-        </main>
+        <!-- Container de Conteúdo e Menu Mobile -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Conteúdo Principal -->
+            <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+                <div id="chat-view" class="view flex-col"></div>
+                <div id="tasks-view" class="view flex-col"></div>
+                <div id="agenda-view" class="view flex-col"></div>
+                <div id="tags-view" class="view flex-col"></div>
+                <div id="settings-view" class="view flex-col"></div>
+            </main>
+            <!-- Menu Inferior (Mobile) -->
+            <nav class="bg-white flex md:hidden justify-around shadow-lg border-t border-slate-200 order-last">
+                 <button onclick="switchView('chat')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="text-xs font-medium">Chat</span>
+                </button>
+                <button onclick="switchView('tasks')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="tasks">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span class="text-xs font-medium">Tarefas</span>
+                </button>
+                <button onclick="switchView('agenda')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="agenda">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                    <span class="text-xs font-medium">Agenda</span>
+                </button>
+                <button onclick="switchView('tags')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="tags">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z"/><path d="M9 9h.01"/></svg>
+                    <span class="text-xs font-medium">Tags</span>
+                </button>
+                 <button onclick="switchView('settings')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span class="text-xs font-medium">Ajustes</span>
+                </button>
+            </nav>
+        </div>
     </div>
 
     <!-- Modals -->
@@ -440,7 +466,7 @@
         }
 
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200">${headerHTML}</header>
+            <header class="p-4 bg-white border-b border-slate-200 flex-shrink-0">${headerHTML}</header>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                 ${state.messages.map(msg => {
                     const isCurrentUser = msg.sender === state.currentUser;
@@ -464,7 +490,7 @@
                     </div>`;
                 }).join('')}
             </div>
-            <div id="chat-input-area" class="bg-white border-t border-slate-200">
+            <div id="chat-input-area" class="bg-white border-t border-slate-200 flex-shrink-0">
                 <div id="reply-preview" class="p-2 bg-slate-100 border-b border-slate-200" style="display: none;"></div>
                 <div id="attachments-preview" class="p-2 bg-slate-100" style="display: none;"></div>
                 <div class="p-4">
@@ -501,7 +527,7 @@
         });
 
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-wrap gap-4 flex-shrink-0">
                 <h2 class="text-xl font-bold">Tarefas Compartilhadas</h2>
                 <button onclick="openTaskModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -551,7 +577,7 @@
         const sortedEvents = [...state.events].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-xl font-bold">Agenda Compartilhada</h2>
                 <button onclick="openEventModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -591,7 +617,7 @@
     function renderTagsView() {
         const view = document.getElementById('tags-view');
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-shrink-0">
                 <h2 class="text-xl font-bold">Gerenciar Tags</h2>
                 <button onclick="openCreateTagModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Nova Tag</button>
             </header>
@@ -620,7 +646,7 @@
     function renderSettingsView() {
         const view = document.getElementById('settings-view');
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200"><h2 class="text-xl font-bold">Ajustes da Conta</h2></header>
+            <header class="p-4 bg-white border-b border-slate-200 flex-shrink-0"><h2 class="text-xl font-bold">Ajustes da Conta</h2></header>
             <div class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar">
                 <div class="max-w-lg mx-auto space-y-8">
                     <div class="bg-white p-6 rounded-lg shadow-sm">
