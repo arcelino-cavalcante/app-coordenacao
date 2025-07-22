@@ -53,6 +53,19 @@
         #app-container.active, #selection-container.active {
             display: flex;
         }
+        /* Estilo para o seletor de cor */
+        input[type="radio"]:checked + label {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px white, 0 0 0 5px var(--tw-ring-color);
+        }
+        /* Opções da mensagem */
+        .message-bubble .message-actions {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .message-bubble:hover .message-actions {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -98,6 +111,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                 <span class="text-sm md:text-base font-medium">Agenda</span>
             </button>
+            <button onclick="switchView('tags')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="tags">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586a2 2 0 0 0-2.828 0L2.172 10.172a2 2 0 0 0 0 2.828l7.414 7.414a2 2 0 0 0 2.828 0l7.414-7.414a2 2 0 0 0 0-2.828L12.586 2.586z"/><path d="M9 9h.01"/></svg>
+                <span class="text-sm md:text-base font-medium">Tags</span>
+            </button>
              <button onclick="switchView('settings')" class="nav-link flex-1 md:flex-grow-0 flex md:flex-row flex-col items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" data-view="settings">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span class="text-sm md:text-base font-medium">Ajustes</span>
@@ -109,6 +126,7 @@
             <div id="chat-view" class="view flex-col h-full"></div>
             <div id="tasks-view" class="view flex-col h-full"></div>
             <div id="agenda-view" class="view flex-col h-full"></div>
+            <div id="tags-view" class="view flex-col h-full"></div>
             <div id="settings-view" class="view flex-col h-full"></div>
         </main>
     </div>
@@ -140,12 +158,37 @@
     const db = getFirestore(app);
 
     const state = {
-        currentUser: null, // Armazena o nome da coordenação (ex: "Coordenação A")
+        currentUser: null,
         authReady: false,
         currentView: 'chat',
         messages: [],
         tasks: [],
         events: [],
+        tags: [],
+        taskSearchTerm: '',
+    };
+
+    let newMessageAttachments = {
+        tags: [],
+        linkedTask: null,
+        linkedEvent: null,
+    };
+    
+    let newMessageReply = null;
+
+    const tagColors = {
+        red: { bg: 'bg-red-200', text: 'text-red-800', ring: 'ring-red-500' },
+        blue: { bg: 'bg-blue-200', text: 'text-blue-800', ring: 'ring-blue-500' },
+        green: { bg: 'bg-green-200', text: 'text-green-800', ring: 'ring-green-500' },
+        yellow: { bg: 'bg-yellow-200', text: 'text-yellow-800', ring: 'ring-yellow-500' },
+        purple: { bg: 'bg-purple-200', text: 'text-purple-800', ring: 'ring-purple-500' },
+        gray: { bg: 'bg-slate-200', text: 'text-slate-800', ring: 'ring-slate-500' },
+    };
+
+    const priorityStyles = {
+        'Alta': { border: 'border-red-500', text: 'text-red-600', bg: 'bg-red-100' },
+        'Média': { border: 'border-yellow-500', text: 'text-yellow-600', bg: 'bg-yellow-100' },
+        'Baixa': { border: 'border-blue-500', text: 'text-blue-600', bg: 'bg-blue-100' },
     };
     
     // ===================================================================================
@@ -154,7 +197,6 @@
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // User is signed in (anonymously).
             state.authReady = true;
             const loggedInUser = sessionStorage.getItem('coordenacaoUser');
             if (loggedInUser) {
@@ -164,12 +206,10 @@
                 document.getElementById('selection-container').classList.add('active');
             }
         } else {
-            // If no user, sign in anonymously. This is the first step.
             try {
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Auth error:", error);
-                document.body.innerHTML = `<p style="color: red; text-align: center; padding: 20px;">Falha na autenticação. Verifique as configurações do Firebase e se o método de login anônimo está ativado.</p>`;
             }
         }
     });
@@ -199,11 +239,11 @@
             e.preventDefault();
             handleLogin(coordinatorName);
         });
-    }
+    };
 
     window.closeModal = () => {
         document.getElementById('modal-container').innerHTML = '';
-    }
+    };
 
     async function handleLogin(coordinatorName) {
         if (!state.authReady) {
@@ -221,10 +261,9 @@
 
             if (userDoc.exists()) {
                 const correctPassword = userDoc.data().password;
-                // AVISO: Comparação de senha em texto plano. Não seguro para produção.
                 if (enteredPassword === correctPassword) {
                     state.currentUser = coordinatorName;
-                    sessionStorage.setItem('coordenacaoUser', coordinatorName); // Salva na sessão
+                    sessionStorage.setItem('coordenacaoUser', coordinatorName);
                     closeModal();
                     setupApp();
                 } else {
@@ -243,7 +282,7 @@
     window.logout = () => {
         sessionStorage.removeItem('coordenacaoUser');
         location.reload();
-    }
+    };
 
     function setupApp() {
         document.getElementById('selection-container').classList.remove('active');
@@ -254,26 +293,28 @@
     }
 
     // ===================================================================================
-    // LISTENERS DO FIRESTORE (SINCRONIZAÇÃO EM TEMPO REAL)
+    // LISTENERS DO FIRESTORE
     // ===================================================================================
     
     function setupFirestoreListeners() {
-        const qMessages = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-        onSnapshot(qMessages, (snapshot) => {
+        onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "asc")), (snapshot) => {
             state.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             if (state.currentView === 'chat') renderChatView();
         });
 
-        const qTasks = query(collection(db, "tasks"));
-        onSnapshot(qTasks, (snapshot) => {
+        onSnapshot(query(collection(db, "tasks")), (snapshot) => {
             state.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             if (state.currentView === 'tasks') renderTasksView();
         });
 
-        const qEvents = query(collection(db, "agenda"));
-        onSnapshot(qEvents, (snapshot) => {
+        onSnapshot(query(collection(db, "agenda")), (snapshot) => {
             state.events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             if (state.currentView === 'agenda') renderAgendaView();
+        });
+
+        onSnapshot(query(collection(db, "tags"), orderBy("name", "asc")), (snapshot) => {
+            state.tags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (state.currentView === 'tags') renderTagsView();
         });
     }
 
@@ -291,6 +332,7 @@
             case 'chat': renderChatView(); break;
             case 'tasks': renderTasksView(); break;
             case 'agenda': renderAgendaView(); break;
+            case 'tags': renderTagsView(); break;
             case 'settings': renderSettingsView(); break;
         }
 
@@ -316,7 +358,7 @@
         return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     }
 
-    // --- RENDER VIEWS ---
+    // --- RENDER CHAT ---
     function renderChatView() {
         const view = document.getElementById('chat-view');
         view.innerHTML = `
@@ -324,81 +366,112 @@
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                 ${state.messages.map(msg => {
                     const isCurrentUser = msg.sender === state.currentUser;
+                    const replyHTML = msg.replyTo 
+                        ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${isCurrentUser ? 'bg-blue-500 border-blue-300' : 'bg-slate-100 border-slate-300'}">
+                                <p class="font-bold text-sm ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${msg.replyTo.sender}</p>
+                                <p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p>
+                           </div>`
+                        : '';
+                    const tagsHTML = (msg.tags && msg.tags.length > 0) 
+                        ? `<div class="flex flex-wrap gap-2 mt-2">${msg.tags.map(tagData => {
+                            const colorClasses = tagColors[tagData.color] || tagColors.gray;
+                            return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full">${tagData.name}</span>`
+                          }).join('')}</div>`
+                        : '';
+                    const taskHTML = msg.linkedTask ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">TAREFA VINCULADA</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedTask.description}</p></div>` : '';
+                    const eventHTML = msg.linkedEvent ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">EVENTO VINCULADO</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedEvent.title}</p></div>` : '';
+
                     return `
-                    <div class="flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}">
-                        <div class="max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-600 text-white rounded-br-lg' : 'bg-white text-slate-800 rounded-bl-lg shadow-sm'}">
+                    <div class="flex items-start gap-2 ${isCurrentUser ? 'justify-end' : ''}">
+                        <div class="relative group message-bubble max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 shadow-sm'}">
+                            <button onclick="openMessageActions('${msg.id}')" class="message-actions absolute top-0 ${isCurrentUser ? '-left-8' : '-right-8'} p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                            </button>
+                            ${replyHTML}
                             <p class="font-bold text-sm mb-1 ${isCurrentUser ? 'text-blue-200' : 'text-teal-600'}">${msg.sender}</p>
-                            <p>${msg.text}</p>
-                            <p class="text-xs mt-2 opacity-75 ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${formatDateTime(msg.timestamp)}</p>
+                            ${msg.text ? `<p class="${isCurrentUser ? 'text-white' : 'text-slate-800'}">${msg.text}</p>` : ''}
+                            ${taskHTML}
+                            ${eventHTML}
+                            ${tagsHTML}
+                            <p class="text-xs mt-2 text-right opacity-75 ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${formatDateTime(msg.timestamp)}</p>
                         </div>
                     </div>`;
                 }).join('')}
             </div>
-            <div class="p-4 bg-white border-t border-slate-200">
+            <div id="reply-preview" class="p-2 bg-slate-100 border-t border-b border-slate-200" style="display: none;"></div>
+            <div id="attachments-preview" class="p-2 bg-slate-100 border-b border-slate-200" style="display: none;"></div>
+            <div class="p-4 bg-white">
                 <div class="flex gap-2">
+                    <button id="attach-btn" class="p-3 border border-slate-300 rounded-lg hover:bg-slate-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.59a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
                     <input type="text" id="message-input" class="flex-1 p-3 border border-slate-300 rounded-lg" placeholder="Digite sua mensagem...">
                     <button id="send-message-btn" class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Enviar</button>
                 </div>
             </div>`;
         
         document.getElementById('send-message-btn').onclick = sendMessage;
+        document.getElementById('attach-btn').onclick = openAttachmentMenu;
         document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
         const messagesContainer = view.querySelector('#chat-messages');
         if(messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        updateAttachmentsPreview();
+        updateReplyPreview();
     }
 
     function renderTasksView() {
         const view = document.getElementById('tasks-view');
-        const sortedTasks = [...state.tasks].sort((a, b) => {
+        
+        const filteredTasks = state.tasks.filter(task => 
+            task.description.toLowerCase().includes(state.taskSearchTerm.toLowerCase())
+        );
+
+        const sortedTasks = [...filteredTasks].sort((a, b) => {
             if (a.completed !== b.completed) return a.completed ? 1 : -1;
-            return new Date(a.deadline) - new Date(b.deadline);
+            const priorityOrder = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+            return (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
         });
 
         view.innerHTML = `
-            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
                 <h2 class="text-xl font-bold">Tarefas Compartilhadas</h2>
-                <button id="add-task-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                <button onclick="openTaskModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>Nova Tarefa</span>
                 </button>
+                <div class="w-full">
+                    <input type="text" id="task-search-input" class="w-full p-2 border border-slate-300 rounded-md" placeholder="Pesquisar tarefas..." value="${state.taskSearchTerm}">
+                </div>
             </header>
             <div id="task-list" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
-                ${sortedTasks.length === 0 ? `
-                <div class="text-center text-slate-500 mt-8">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <p>Nenhuma tarefa por aqui. Adicione uma!</p>
-                </div>` : 
+                ${sortedTasks.length === 0 ? `<div class="text-center text-slate-500 mt-8"><p>Nenhuma tarefa encontrada.</p></div>` : 
                 sortedTasks.map(task => {
                     const isCompleted = task.completed;
-                    const isOverdue = !isCompleted && new Date(task.deadline) < new Date();
+                    const style = priorityStyles[task.priority] || { border: 'border-slate-500', text: 'text-slate-600', bg: 'bg-slate-100' };
                     return `
-                    <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 ${isCompleted ? 'border-green-500 opacity-70' : isOverdue ? 'border-red-500' : 'border-yellow-500'}">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 ${isCompleted ? 'border-green-500 opacity-70' : style.border}">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <p class="font-semibold ${isCompleted ? 'line-through text-slate-500' : ''}">${task.description}</p>
-                                <div class="text-sm text-slate-500 mt-2 flex items-center gap-4">
+                                <div class="text-sm text-slate-500 mt-2 flex items-center gap-4 flex-wrap">
                                     <span class="flex items-center gap-1.5">Prazo: ${formatDate(task.deadline)}</span>
-                                    <span class="flex items-center gap-1.5 font-medium ${isCompleted ? 'text-green-600' : isOverdue ? 'text-red-600' : 'text-yellow-600'}">
-                                        ${isCompleted ? 'Concluída' : isOverdue ? 'Atrasada' : 'Pendente'}
-                                    </span>
+                                    <span class="font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}">${task.priority || 'Sem prioridade'}</span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 ml-4">
-                                <button onclick="toggleTaskStatus('${task.id}', ${task.completed})" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="${isCompleted ? 'Marcar como pendente' : 'Marcar como concluída'}">
-                                    ${isCompleted ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="12" cy="12" r="10"/></svg>'}
-                                </button>
-                                <button onclick="openTaskModal('${task.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Editar tarefa">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                </button>
-                                <button onclick="deleteTask('${task.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Excluir tarefa">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                </button>
+                                <button onclick="toggleTaskStatus('${task.id}', ${task.completed})" class="p-2 rounded-full hover:bg-slate-100 transition-colors">${isCompleted ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="12" cy="12" r="10"/></svg>'}</button>
+                                <button onclick="openTaskModal('${task.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                                <button onclick="deleteTask('${task.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                             </div>
                         </div>
                     </div>`;
                 }).join('')}
             </div>`;
-        document.getElementById('add-task-btn').onclick = () => openTaskModal();
+        
+        document.getElementById('task-search-input').oninput = (e) => {
+            state.taskSearchTerm = e.target.value;
+            renderTasksView();
+        };
     }
     
     function renderAgendaView() {
@@ -408,17 +481,13 @@
         view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
                 <h2 class="text-xl font-bold">Agenda Compartilhada</h2>
-                <button id="add-event-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                <button onclick="openEventModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>Novo Evento</span>
                 </button>
             </header>
             <div id="event-list" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar">
-                ${sortedEvents.length === 0 ? `
-                <div class="text-center text-slate-500 mt-8">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                    <p>Nenhum evento na agenda. Adicione um!</p>
-                </div>` : 
+                ${sortedEvents.length === 0 ? `<div class="text-center text-slate-500 mt-8"><p>Nenhum evento na agenda.</p></div>` : 
                 sortedEvents.map(event => {
                     const eventDate = new Date(event.dateTime);
                     const day = String(eventDate.getDate()).padStart(2, '0');
@@ -430,21 +499,14 @@
                             <p class="text-sm font-semibold uppercase text-slate-600">${month}</p>
                         </div>
                         <div class="flex-1">
-                            <div class="flex justify-between items-start">
+                             <div class="flex justify-between items-start">
                                 <div>
                                     <h4 class="font-bold text-lg">${event.title}</h4>
-                                    <p class="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        ${String(eventDate.getHours()).padStart(2, '0')}:${String(eventDate.getMinutes()).padStart(2, '0')}
-                                    </p>
+                                    <p class="text-sm text-slate-500">${String(eventDate.getHours()).padStart(2, '0')}:${String(eventDate.getMinutes()).padStart(2, '0')}</p>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <button onclick="openEventModal('${event.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Editar evento">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                    </button>
-                                    <button onclick="deleteEvent('${event.id}')" class="p-2 rounded-full hover:bg-slate-100 transition-colors" title="Excluir evento">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                    </button>
+                                    <button onclick="openEventModal('${event.id}')" class="p-2 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                                    <button onclick="deleteEvent('${event.id}')" class="p-2 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                                 </div>
                             </div>
                             <p class="text-slate-600 mt-2">${event.description || ''}</p>
@@ -452,10 +514,37 @@
                     </div>`;
                 }).join('')}
             </div>`;
-        document.getElementById('add-event-btn').onclick = () => openEventModal();
     }
 
-    // --- RENDER AJUSTES ---
+    function renderTagsView() {
+        const view = document.getElementById('tags-view');
+        view.innerHTML = `
+            <header class="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Gerenciar Tags</h2>
+                <button onclick="openCreateTagModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Nova Tag</button>
+            </header>
+            <div class="flex-1 p-4 overflow-y-auto custom-scrollbar">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                ${state.tags.length === 0 ? `<div class="col-span-full text-center text-slate-500 mt-8"><p>Nenhuma tag criada.</p></div>` :
+                state.tags.map(tag => {
+                    const colorClasses = tagColors[tag.color] || tagColors.gray;
+                    return `
+                    <div class="bg-white p-4 rounded-lg shadow-sm flex flex-col items-center justify-center text-center">
+                        <span class="font-semibold px-3 py-1 rounded-full ${colorClasses.bg} ${colorClasses.text}">${tag.name}</span>
+                        <div class="flex items-center gap-2 mt-4">
+                            <button onclick="openCreateTagModal('${tag.id}')" class="p-2 rounded-full hover:bg-slate-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                            </button>
+                            <button onclick="deleteTag('${tag.id}')" class="p-2 rounded-full hover:bg-slate-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('')}
+                </div>
+            </div>`;
+    }
+
     function renderSettingsView() {
         const view = document.getElementById('settings-view');
         view.innerHTML = `
@@ -490,14 +579,75 @@
     async function sendMessage() {
         const input = document.getElementById('message-input');
         const text = input.value.trim();
-        if (text) {
-            input.value = '';
-            await addDoc(collection(db, "messages"), {
-                sender: state.currentUser,
-                text: text,
-                timestamp: serverTimestamp()
-            });
+
+        if (!text && newMessageAttachments.tags.length === 0 && !newMessageAttachments.linkedTask && !newMessageAttachments.linkedEvent && !newMessageReply) {
+            return;
         }
+
+        const messageData = {
+            sender: state.currentUser,
+            text: text,
+            timestamp: serverTimestamp(),
+            ...newMessageAttachments,
+            replyTo: newMessageReply,
+        };
+
+        await addDoc(collection(db, "messages"), messageData);
+        
+        input.value = '';
+        newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
+        newMessageReply = null;
+        updateAttachmentsPreview();
+        updateReplyPreview();
+    }
+    
+    function openAttachmentMenu() {
+        const modalContainer = document.getElementById('modal-container');
+        modalContainer.innerHTML = `
+            <div id="attachment-menu-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xs modal-enter">
+                    <h3 class="text-lg font-bold mb-4 text-center">Anexar à Mensagem</h3>
+                    <div class="flex flex-col gap-3">
+                        <button onclick="openTagSelectionModal()" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg">Adicionar Tag</button>
+                        <button onclick="openTaskSelectionModal()" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg">Anexar Tarefa</button>
+                        <button onclick="openEventSelectionModal()" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg">Anexar Evento</button>
+                        <button onclick="closeModal()" class="mt-2 w-full text-center p-2 bg-slate-200 rounded-lg">Cancelar</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    window.openTagSelectionModal = () => {
+        closeModal();
+        const modalContainer = document.getElementById('modal-container');
+        
+        let tagListHTML = state.tags.length > 0 
+            ? state.tags.map(tag => {
+                const colorClasses = tagColors[tag.color] || tagColors.gray;
+                return `<li onclick="selectTagForMessage('${tag.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full ${colorClasses.bg}"></span>
+                            <span>${tag.name}</span>
+                        </li>`
+              }).join('')
+            : `<li class="p-3 text-slate-500">Nenhuma tag criada. Vá para a tela de Tags para criar uma.</li>`;
+
+        modalContainer.innerHTML = `
+            <div id="tag-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
+                    <h3 class="text-lg font-bold mb-4">Selecionar Tag</h3>
+                    <ul class="max-h-60 overflow-y-auto custom-scrollbar">${tagListHTML}</ul>
+                    <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Fechar</button>
+                </div>
+            </div>`;
+    }
+
+    window.selectTagForMessage = (tagId) => {
+        const tag = state.tags.find(t => t.id === tagId);
+        if (tag && !newMessageAttachments.tags.some(t => t.id === tagId)) {
+            newMessageAttachments.tags.push({ id: tag.id, name: tag.name, color: tag.color });
+            updateAttachmentsPreview();
+        }
+        closeModal();
     }
 
     async function handleUpdatePassword(e) {
@@ -514,10 +664,7 @@
         try {
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists() && userDoc.data().password === currentPassword) {
-                // Senha atual está correta, atualiza para a nova
-                await updateDoc(userDocRef, {
-                    password: newPassword
-                });
+                await updateDoc(userDocRef, { password: newPassword });
                 messageP.textContent = 'Senha atualizada com sucesso!';
                 messageP.className = 'text-green-600 text-sm mb-4';
                 e.target.reset();
@@ -532,6 +679,101 @@
         }
     }
     
+    function updateAttachmentsPreview() {
+        const previewContainer = document.getElementById('attachments-preview');
+        if (!previewContainer) return;
+
+        let previewHTML = '';
+        if (newMessageAttachments.tags.length > 0) {
+            previewHTML += newMessageAttachments.tags.map(tag => {
+                const colorClasses = tagColors[tag.color] || tagColors.gray;
+                return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full mr-1">${tag.name}</span>`
+            }).join('');
+        }
+        if (newMessageAttachments.linkedTask) {
+            previewHTML += `<span class="text-sm p-1 bg-slate-200 rounded">Tarefa: ${newMessageAttachments.linkedTask.description}</span>`;
+        }
+        if (newMessageAttachments.linkedEvent) {
+            previewHTML += `<span class="text-sm p-1 bg-slate-200 rounded">Evento: ${newMessageAttachments.linkedEvent.title}</span>`;
+        }
+
+        if (previewHTML) {
+            previewContainer.innerHTML = previewHTML + `<button onclick="clearAttachments()" class="ml-2 text-red-500 font-bold">X</button>`;
+            previewContainer.style.display = 'block';
+        } else {
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'none';
+        }
+    }
+
+    window.clearAttachments = () => {
+        newMessageAttachments = { tags: [], linkedTask: null, linkedEvent: null };
+        updateAttachmentsPreview();
+    }
+
+    window.openCreateTagModal = (tagId = null) => {
+        const existingTag = tagId ? state.tags.find(t => t.id === tagId) : null;
+        const modalContainer = document.getElementById('modal-container');
+
+        const colorOptionsHTML = Object.entries(tagColors).map(([colorName, classes]) => `
+            <div>
+                <input type="radio" name="tag-color" id="color-${colorName}" value="${colorName}" class="sr-only" ${existingTag?.color === colorName ? 'checked' : ''}>
+                <label for="color-${colorName}" style="--tw-ring-color: ${colorName === 'gray' ? '#64748b' : `var(--tw-color-${colorName}-500)`}" class="block w-8 h-8 rounded-full cursor-pointer transition-transform ${classes.bg} ring-offset-2"></label>
+            </div>
+        `).join('');
+
+        modalContainer.innerHTML = `
+            <div id="create-tag-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm modal-enter">
+                    <h3 class="text-lg font-bold mb-4">${existingTag ? 'Editar Tag' : 'Criar Nova Tag'}</h3>
+                    <form id="create-tag-form">
+                        <input type="hidden" id="tag-id" value="${tagId || ''}">
+                        <div class="mb-4">
+                            <label for="tag-name" class="block text-sm font-medium text-slate-700 mb-1">Nome da Tag</label>
+                            <input type="text" id="tag-name" class="w-full p-2 border border-slate-300 rounded-md" required value="${existingTag?.name || ''}">
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Cor</label>
+                            <div class="flex justify-around">${colorOptionsHTML}</div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="closeModal()" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg">Cancelar</button>
+                            <button type="submit" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        
+        document.getElementById('create-tag-form').onsubmit = handleTagFormSubmit;
+    }
+
+    async function handleTagFormSubmit(e) {
+        e.preventDefault();
+        const tagId = document.getElementById('tag-id').value;
+        const tagName = document.getElementById('tag-name').value.trim();
+        const selectedColor = document.querySelector('input[name="tag-color"]:checked')?.value;
+
+        if (!tagName || !selectedColor) {
+            alert('Por favor, preencha o nome e selecione uma cor.');
+            return;
+        }
+
+        const tagData = { name: tagName, color: selectedColor };
+
+        if (tagId) {
+            await updateDoc(doc(db, "tags", tagId), tagData);
+        } else {
+            await addDoc(collection(db, "tags"), tagData);
+        }
+        closeModal();
+    }
+
+    window.deleteTag = (tagId) => {
+        showConfirmModal('Tem certeza que deseja excluir esta tag?', async () => {
+            await deleteDoc(doc(db, "tags", tagId));
+        });
+    }
+
     window.openTaskModal = (taskId = null) => {
         const modalContainer = document.getElementById('modal-container');
         const task = taskId ? state.tasks.find(t => t.id === taskId) : null;
@@ -545,9 +787,19 @@
                             <label for="task-description" class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
                             <input type="text" id="task-description" class="w-full p-2 border border-slate-300 rounded-md" required value="${task?.description || ''}">
                         </div>
-                        <div class="mb-6">
-                            <label for="task-deadline" class="block text-sm font-medium text-slate-700 mb-1">Prazo</label>
-                            <input type="date" id="task-deadline" class="w-full p-2 border border-slate-300 rounded-md" required value="${task ? new Date(task.deadline).toISOString().split('T')[0] : ''}">
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label for="task-deadline" class="block text-sm font-medium text-slate-700 mb-1">Prazo</label>
+                                <input type="date" id="task-deadline" class="w-full p-2 border border-slate-300 rounded-md" required value="${task ? new Date(task.deadline).toISOString().split('T')[0] : ''}">
+                            </div>
+                            <div>
+                                <label for="task-priority" class="block text-sm font-medium text-slate-700 mb-1">Prioridade</label>
+                                <select id="task-priority" class="w-full p-2 border border-slate-300 rounded-md">
+                                    <option value="Baixa" ${task?.priority === 'Baixa' ? 'selected' : ''}>Baixa</option>
+                                    <option value="Média" ${!task || task?.priority === 'Média' ? 'selected' : ''}>Média</option>
+                                    <option value="Alta" ${task?.priority === 'Alta' ? 'selected' : ''}>Alta</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="flex justify-end gap-3">
                             <button type="button" onclick="closeModal()" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300">Cancelar</button>
@@ -565,10 +817,12 @@
         const id = document.getElementById('task-id').value;
         const description = document.getElementById('task-description').value;
         const deadline = document.getElementById('task-deadline').value;
+        const priority = document.getElementById('task-priority').value;
 
         const data = {
             description,
-            deadline: new Date(deadline).toISOString().split('T')[0] + 'T23:59:59.999Z', // Fim do dia
+            deadline: new Date(deadline).toISOString().split('T')[0] + 'T23:59:59.999Z',
+            priority,
         };
 
         if (id) {
@@ -678,6 +932,69 @@
             onConfirm();
             closeModal();
         };
+    }
+
+    window.openMessageActions = (messageId) => {
+        const msg = state.messages.find(m => m.id === messageId);
+        if (!msg) return;
+
+        const modalContainer = document.getElementById('modal-container');
+        const canDelete = msg.sender === state.currentUser;
+        
+        modalContainer.innerHTML = `
+            <div id="message-actions-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-2 w-full max-w-xs modal-enter">
+                    <ul class="flex flex-col">
+                        <li><button onclick="replyToMessage('${msg.id}')" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg">Responder</button></li>
+                        ${canDelete ? `<li><button onclick="deleteMessage('${msg.id}')" class="w-full text-left p-3 text-red-600 hover:bg-red-50 rounded-lg">Apagar</button></li>` : ''}
+                        <li><button onclick="closeModal()" class="w-full text-left p-3 hover:bg-slate-100 rounded-lg">Cancelar</button></li>
+                    </ul>
+                </div>
+            </div>`;
+    }
+
+    window.replyToMessage = (messageId) => {
+        const msg = state.messages.find(m => m.id === messageId);
+        if (msg) {
+            newMessageReply = {
+                id: msg.id,
+                sender: msg.sender,
+                text: msg.text || 'Anexo'
+            };
+            updateReplyPreview();
+        }
+        closeModal();
+    }
+
+    window.deleteMessage = (messageId) => {
+        showConfirmModal('Tem certeza que deseja apagar esta mensagem?', async () => {
+            await deleteDoc(doc(db, "messages", messageId));
+        });
+    }
+
+    function updateReplyPreview() {
+        const previewContainer = document.getElementById('reply-preview');
+        if (!previewContainer) return;
+
+        if (newMessageReply) {
+            previewContainer.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div class="border-l-2 border-blue-500 pl-2">
+                        <p class="font-bold text-sm text-slate-600">${newMessageReply.sender}</p>
+                        <p class="text-sm text-slate-500 truncate">${newMessageReply.text}</p>
+                    </div>
+                    <button onclick="clearReply()" class="font-bold text-red-500">X</button>
+                </div>`;
+            previewContainer.style.display = 'block';
+        } else {
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'none';
+        }
+    }
+
+    window.clearReply = () => {
+        newMessageReply = null;
+        updateReplyPreview();
     }
     
 </script>
