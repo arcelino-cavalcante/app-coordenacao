@@ -143,18 +143,18 @@
             </button>
         </nav>
 
-        <!-- Container de Conteúdo e Menu Mobile -->
+        <!-- Container de Conteúdo (Mobile e Desktop) -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Conteúdo Principal -->
             <main class="flex-1 flex flex-col bg-slate-50 overflow-hidden">
-                <div id="chat-view" class="view flex-col"></div>
-                <div id="tasks-view" class="view flex-col"></div>
-                <div id="agenda-view" class="view flex-col"></div>
-                <div id="tags-view" class="view flex-col"></div>
-                <div id="settings-view" class="view flex-col"></div>
+                <div id="chat-view" class="view flex-col h-full"></div>
+                <div id="tasks-view" class="view flex-col h-full"></div>
+                <div id="agenda-view" class="view flex-col h-full"></div>
+                <div id="tags-view" class="view flex-col h-full"></div>
+                <div id="settings-view" class="view flex-col h-full"></div>
             </main>
+
             <!-- Menu Inferior (Mobile) -->
-            <nav class="bg-white flex md:hidden justify-around shadow-lg border-t border-slate-200 order-last">
+            <nav class="bg-white flex md:hidden justify-around shadow-lg border-t border-slate-200 flex-shrink-0">
                  <button onclick="switchView('chat')" class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="chat">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     <span class="text-xs font-medium">Chat</span>
