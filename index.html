@@ -17,6 +17,11 @@
         /* Estilos personalizados */
         body {
             font-family: 'Inter', sans-serif;
+            /* Desabilita a seleção de texto */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .view {
             display: none;
@@ -66,9 +71,26 @@
         .message-bubble:hover .message-actions {
             opacity: 1;
         }
+        /* Camada de segurança para dificultar print screen */
+        @media print {
+            body {
+                display: none !important;
+            }
+        }
+        .secure-overlay::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: transparent;
+            pointer-events: none;
+            z-index: 9999;
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="bg-slate-100 text-slate-800 secure-overlay">
 
     <!-- Tela de Seleção de Usuário -->
     <div id="selection-container" class="h-screen w-screen flex-col items-center justify-center p-4">
@@ -221,6 +243,18 @@
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Auth error:", error);
+            }
+        }
+    });
+
+    // Bloqueia o menu de contexto (botão direito)
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    // Bloqueia atalhos de teclado para copiar
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey) { // Ctrl no Windows, Cmd no Mac
+            if (['c', 'x', 'u'].includes(e.key.toLowerCase())) {
+                e.preventDefault();
             }
         }
     });
@@ -784,7 +818,7 @@
                         </div>
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-slate-700 mb-2">Cor</label>
-                            <div class="flex justify-around">${colorOptionsHTML}</div>
+                            <div class="flex flex-wrap justify-center gap-4">${colorOptionsHTML}</div>
                         </div>
                         <div class="flex justify-end gap-3">
                             <button type="button" onclick="closeModal()" class="bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg">Cancelar</button>
@@ -1188,6 +1222,64 @@
             await batch.commit();
             console.log("Mensagens marcadas como lidas.");
         }
+    }
+
+    window.openTaskSelectionModal = () => {
+        closeModal();
+        const modalContainer = document.getElementById('modal-container');
+        const pendingTasks = state.tasks.filter(t => !t.completed);
+        
+        let taskListHTML = pendingTasks.length > 0 
+            ? pendingTasks.map(task => `<li onclick="selectTask('${task.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">${task.description}</li>`).join('')
+            : `<li class="p-3 text-slate-500">Nenhuma tarefa pendente.</li>`;
+
+        modalContainer.innerHTML = `
+            <div id="task-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
+                    <h3 class="text-lg font-bold mb-4">Anexar Tarefa Pendente</h3>
+                    <ul class="max-h-60 overflow-y-auto custom-scrollbar">${taskListHTML}</ul>
+                    <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Cancelar</button>
+                </div>
+            </div>`;
+    }
+
+    window.selectTask = (taskId) => {
+        const task = state.tasks.find(t => t.id === taskId);
+        if (task) {
+            newMessageAttachments.linkedTask = { id: task.id, description: task.description };
+            newMessageAttachments.linkedEvent = null; // Só pode ter um ou outro
+            updateAttachmentsPreview();
+        }
+        closeModal();
+    }
+
+    window.openEventSelectionModal = () => {
+        closeModal();
+        const modalContainer = document.getElementById('modal-container');
+        const upcomingEvents = state.events.filter(e => new Date(e.dateTime) >= new Date());
+
+        let eventListHTML = upcomingEvents.length > 0
+            ? upcomingEvents.map(event => `<li onclick="selectEvent('${event.id}')" class="p-3 hover:bg-slate-100 rounded-lg cursor-pointer">${event.title} (${formatDate(event.dateTime)})</li>`).join('')
+            : `<li class="p-3 text-slate-500">Nenhum evento futuro.</li>`;
+
+        modalContainer.innerHTML = `
+            <div id="event-selection-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md modal-enter">
+                    <h3 class="text-lg font-bold mb-4">Anexar Evento Futuro</h3>
+                    <ul class="max-h-60 overflow-y-auto custom-scrollbar">${eventListHTML}</ul>
+                    <button onclick="closeModal()" class="mt-4 w-full text-center p-2 bg-slate-200 rounded-lg">Cancelar</button>
+                </div>
+            </div>`;
+    }
+
+    window.selectEvent = (eventId) => {
+        const event = state.events.find(e => e.id === eventId);
+        if (event) {
+            newMessageAttachments.linkedEvent = { id: event.id, title: event.title };
+            newMessageAttachments.linkedTask = null; // Só pode ter um ou outro
+            updateAttachmentsPreview();
+        }
+        closeModal();
     }
     
 </script>
