@@ -797,6 +797,12 @@
             <div class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar">
                 <div class="max-w-lg mx-auto space-y-8">
                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Sistema</h3>
+                        <button id="update-version-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Atualizar Versão</button>
+                        <p class="text-sm text-slate-500 mt-2">Clique para carregar a versão mais recente do aplicativo.</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-lg font-semibold mb-4">Notificações</h3>
                         <button id="notifications-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed">Ativar Notificações</button>
                         <p id="notifications-status" class="text-sm text-slate-500 mt-2"></p>
@@ -820,8 +826,25 @@
             </div>`;
 
             document.getElementById('notifications-btn').addEventListener('click', subscribeToNotifications);
+            document.getElementById('update-version-btn').addEventListener('click', forceReload);
             document.getElementById('update-password-form').addEventListener('submit', handleUpdatePassword);
             checkNotificationPermission(); // Verifica o estado atual da permissão
+        }
+
+        async function forceReload() {
+            try {
+                // Limpa todos os caches do service worker
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+                console.log('Cache do Service Worker limpo.');
+
+                // Força o recarregamento da página, ignorando o cache do navegador
+                window.location.reload(true);
+            } catch (error) {
+                console.error('Falha ao forçar a atualização:', error);
+                // Se a limpeza do cache falhar, ainda tenta recarregar a página
+                window.location.reload(true);
+            }
         }
 
         function urlBase64ToUint8Array(base64String) {
