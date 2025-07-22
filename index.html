@@ -362,6 +362,27 @@
             'Baixa': { border: 'border-blue-500', text: 'text-blue-600', bg: 'bg-blue-100' },
         };
 
+        const userChatColors = {
+            'Coordenação A': {
+                bubble: 'bg-blue-500 text-white',
+                senderName: 'text-blue-100',
+                replyBubble: 'bg-blue-400 border-blue-200',
+                replySender: 'text-blue-100',
+            },
+            'Coordenação D': {
+                bubble: 'bg-green-500 text-white',
+                senderName: 'text-green-100',
+                replyBubble: 'bg-green-400 border-green-200',
+                replySender: 'text-green-100',
+            },
+            'Coordenação R': {
+                bubble: 'bg-purple-500 text-white',
+                senderName: 'text-purple-100',
+                replyBubble: 'bg-purple-400 border-purple-200',
+                replySender: 'text-purple-100',
+            },
+        };
+
         // ===================================================================================
         // INICIALIZAÇÃO E AUTENTICAÇÃO
         // ===================================================================================
@@ -584,22 +605,34 @@
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
                 ${state.messages.map(msg => {
                 const isCurrentUser = msg.sender === state.currentUser;
-                const replyHTML = msg.replyTo ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${isCurrentUser ? 'bg-blue-500 border-blue-300' : 'bg-slate-100 border-slate-300'}"><p class="font-bold text-sm ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${msg.replyTo.sender}</p><p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p></div>` : '';
+                const senderColor = userChatColors[msg.sender] || { bubble: 'bg-white text-slate-800 shadow-sm', senderName: 'text-teal-600', replyBubble: 'bg-slate-100 border-slate-300', replySender: 'text-slate-500' };
+                const currentUserColor = userChatColors[state.currentUser];
+
+                const bubbleClasses = isCurrentUser ? currentUserColor.bubble : senderColor.bubble;
+                const senderNameClasses = isCurrentUser ? currentUserColor.senderName : senderColor.senderName;
+                const replyBubbleClasses = isCurrentUser ? currentUserColor.replyBubble : 'bg-slate-100 border-slate-300';
+                const replySenderClasses = isCurrentUser ? currentUserColor.replySender : 'text-slate-500';
+
+                // Determine timestamp color based on whether the sender has a defined color
+                const isCoordinator = msg.sender in userChatColors;
+                const timestampColorClass = isCoordinator ? 'text-white' : 'text-slate-500';
+
+                const replyHTML = msg.replyTo ? `<div class="p-2 rounded-lg mb-2 border-l-2 ${replyBubbleClasses}"><p class="font-bold text-sm ${replySenderClasses}">${msg.replyTo.sender}</p><p class="text-sm opacity-80 truncate">${msg.replyTo.text}</p></div>` : '';
                 const tagsHTML = (msg.tags && msg.tags.length > 0) ? `<div class="flex flex-wrap gap-2 mt-2">${msg.tags.map(tagData => { const colorClasses = tagColors[tagData.color] || tagColors.gray; return `<span class="text-xs ${colorClasses.bg} ${colorClasses.text} font-semibold px-2 py-1 rounded-full">${tagData.name}</span>` }).join('')}</div>` : '';
                 const taskHTML = msg.linkedTask ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">TAREFA VINCULADA</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedTask.description}</p></div>` : '';
                 const eventHTML = msg.linkedEvent ? `<div class="mt-2 p-2 rounded-lg border ${isCurrentUser ? 'bg-blue-700 border-blue-500' : 'bg-slate-50 border-slate-200'}"><p class="text-xs font-semibold ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">EVENTO VINCULADO</p><p class="text-sm ${isCurrentUser ? 'text-white' : 'text-slate-700'}">${msg.linkedEvent.title}</p></div>` : '';
 
                 return `
                     <div class="flex items-start gap-2 ${isCurrentUser ? 'justify-end' : ''}">
-                        <div class="relative group message-bubble max-w-xs md:max-w-md p-3 rounded-2xl ${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 shadow-sm'}">
+                        <div class="relative group message-bubble max-w-xs md:max-w-md p-3 rounded-2xl ${bubbleClasses}">
                             <button onclick="openMessageActions('${msg.id}')" class="message-actions absolute top-0 ${isCurrentUser ? '-left-8' : '-right-8'} p-1 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                             </button>
                             ${replyHTML}
-                            <p class="font-bold text-sm mb-1 ${isCurrentUser ? 'text-blue-200' : 'text-teal-600'}">${msg.sender}</p>
-                            ${msg.text ? `<p class="${isCurrentUser ? 'text-white' : 'text-slate-800'}">${msg.text}</p>` : ''}
+                            <p class="font-bold text-sm mb-1 ${senderNameClasses}">${msg.sender}</p>
+                            ${msg.text ? `<p>${msg.text}</p>` : ''}
                             ${taskHTML} ${eventHTML} ${tagsHTML}
-                            <p class="text-xs mt-2 text-right opacity-75 ${isCurrentUser ? 'text-blue-200' : 'text-slate-500'}">${formatDateTime(msg.timestamp)}</p>
+                            <p class="text-xs mt-2 text-right opacity-75 ${timestampColorClass}">${formatDateTime(msg.timestamp)}</p>
                         </div>
                     </div>`;
             }).join('')}
@@ -764,6 +797,11 @@
             <div class="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar">
                 <div class="max-w-lg mx-auto space-y-8">
                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4">Notificações</h3>
+                        <button id="notifications-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed">Ativar Notificações</button>
+                        <p id="notifications-status" class="text-sm text-slate-500 mt-2"></p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-lg font-semibold mb-4">Alterar Senha de ${state.currentUser}</h3>
                         <form id="update-password-form">
                             <div class="mb-4">
@@ -781,7 +819,73 @@
                 </div>
             </div>`;
 
+            document.getElementById('notifications-btn').addEventListener('click', subscribeToNotifications);
             document.getElementById('update-password-form').addEventListener('submit', handleUpdatePassword);
+            checkNotificationPermission(); // Verifica o estado atual da permissão
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        function checkNotificationPermission() {
+            if ('Notification' in window) {
+                const button = document.getElementById('notifications-btn');
+                const status = document.getElementById('notifications-status');
+                if (Notification.permission === 'granted') {
+                    button.textContent = 'Notificações Ativadas';
+                    button.disabled = true;
+                    status.textContent = 'Você já está recebendo notificações.';
+                } else if (Notification.permission === 'denied') {
+                    button.textContent = 'Notificações Bloqueadas';
+                    button.disabled = true;
+                    status.textContent = 'Você bloqueou as notificações. Altere nas configurações do seu navegador.';
+                }
+            }
+        }
+
+        async function subscribeToNotifications() {
+            const VAPID_PUBLIC_KEY = "BN8eCcJZ_9tPINjvwUUZDvQOBOv2C9zl_R190ZNFxe_BYuISQZDnBVvGdKz7T2K8fVaH5V80hIMaNa6LDGw3OhA";
+            const button = document.getElementById('notifications-btn');
+            const status = document.getElementById('notifications-status');
+
+            try {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    status.textContent = 'Notificações push não são suportadas neste navegador.';
+                    button.disabled = true;
+                    return;
+                }
+
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+
+                const subscriptionData = JSON.parse(JSON.stringify(subscription));
+                const userSubscriptionsRef = collection(db, "users", state.currentUser, "subscriptions");
+                await addDoc(userSubscriptionsRef, subscriptionData);
+
+                button.textContent = 'Notificações Ativadas';
+                button.disabled = true;
+                status.textContent = 'Inscrição realizada com sucesso!';
+
+            } catch (error) {
+                console.error('Falha ao se inscrever para notificações:', error);
+                if (Notification.permission === 'denied') {
+                    status.textContent = 'Permissão de notificação negada. Por favor, habilite nas configurações do navegador.';
+                } else {
+                    status.textContent = 'Falha ao se inscrever. Verifique o console para mais detalhes.';
+                }
+                button.disabled = true;
+            }
         }
 
         // ===================================================================================

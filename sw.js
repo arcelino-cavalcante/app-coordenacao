@@ -3,8 +3,6 @@ const CACHE_NAME = 'coordenador-app-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
   '/manifest.json',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg'
@@ -20,14 +18,38 @@ self.addEventListener('install', event => {
   );
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
+self.addEventListener('push', event => {
+    const data = event.data.json();
+    const options = {
+        body: data.body,
+        icon: data.icon,
+        data: {
+            url: data.data.url // Passa a URL para o evento de clique
         }
-        return fetch(event.request);
-      })
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close(); // Fecha a notificação
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      const urlToOpen = new URL(event.notification.data.url, self.location.origin).href;
+
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
   );
 });
