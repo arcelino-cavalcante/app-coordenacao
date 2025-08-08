@@ -21,6 +21,9 @@
 
     <link rel="manifest" href="/manifest.json">
 
+    <!-- SortableJS para arrastar e soltar -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
     <style>
         /* Estilos personalizados */
         body {
@@ -120,6 +123,20 @@
             background-color: transparent;
             pointer-events: none;
             z-index: 9999;
+        }
+
+        /* Estilos para o Kanban */
+        .day-column .sortable-ghost {
+            background: #e0e7ff;
+            opacity: 0.7;
+        }
+
+        .day-column li {
+            cursor: grab;
+        }
+
+        .day-column li:active {
+            cursor: grabbing;
         }
     </style>
 </head>
@@ -227,6 +244,12 @@
                 </svg>
                 <span class="text-base font-medium">Ajustes</span>
             </button>
+            <button onclick="switchView('visitas')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="visitas">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                <span class="text-base font-medium">Visitas</span>
+            </button>
         </nav>
 
         <!-- Container de Conteúdo (Mobile e Desktop) -->
@@ -237,6 +260,7 @@
                 <div id="agenda-view" class="view flex-col h-full"></div>
                 <div id="tags-view" class="view flex-col h-full"></div>
                 <div id="settings-view" class="view flex-col h-full"></div>
+                <div id="visitas-view" class="view flex-col h-full"></div>
             </main>
 
             <!-- Menu Inferior (Mobile) -->
@@ -289,6 +313,11 @@
                     </svg>
                     <span class="text-xs font-medium">Ajustes</span>
                 </button>
+                <button onclick="switchView('visitas')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="visitas">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                    <span class="text-xs font-medium">Visitas</span>
+                </button>
             </nav>
         </div>
     </div>
@@ -331,6 +360,9 @@
             tags: [],
             taskSearchTerm: '',
             unreadChats: [], // Nomes dos parceiros com mensagens não lidas
+            teachers: [],
+            schedule: {},
+            visitHistory: [],
         };
 
         let unsubscribeMessages = () => { }; // Função para parar de ouvir o chat atual
@@ -387,10 +419,49 @@
         // INICIALIZAÇÃO E AUTENTICAÇÃO
         // ===================================================================================
 
+        function getISOWeek(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        async function checkForWeeklyScheduleReset() {
+            const today = new Date();
+            const currentWeek = getISOWeek(today);
+
+            const metaRef = doc(db, "app_meta", "schedule_tracker");
+            try {
+                const metaDoc = await getDoc(metaRef);
+                let lastResetWeek = -1;
+
+                if (metaDoc.exists()) {
+                    lastResetWeek = metaDoc.data().lastResetWeek;
+                }
+
+                if (lastResetWeek !== currentWeek) {
+                    console.log("New week detected, resetting schedule...");
+
+                    // Clear the schedule
+                    const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+                    const scheduleDocRef = doc(db, `artifacts/${appId}/public/data/schedule/current`);
+                    await setDoc(scheduleDocRef, {}); // Set to an empty object to clear it
+
+                    // Update the tracker
+                    await setDoc(metaRef, { lastResetWeek: currentWeek });
+                    console.log("Schedule reset and tracker updated for week " + currentWeek);
+                }
+            } catch (error) {
+                console.error("Error during weekly schedule reset check:", error);
+            }
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 state.authReady = true;
                 await checkForMessageCleanup();
+                await checkForWeeklyScheduleReset(); // Check for schedule reset
                 const loggedInUser = sessionStorage.getItem('coordenacaoUser');
                 if (loggedInUser) {
                     state.currentUser = loggedInUser;
@@ -517,7 +588,7 @@
 
             unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
                 state.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if (state.currentView === 'chat') renderChatView();
+                if (state.currentView === 'chat') renderMessages();
             });
 
             // Listeners que não mudam
@@ -534,6 +605,30 @@
             onSnapshot(query(collection(db, "tags"), orderBy("name", "asc")), (snapshot) => {
                 state.tags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 if (state.currentView === 'tags') renderTagsView();
+            });
+
+            const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+            const teachersCollectionRef = collection(db, `artifacts/${appId}/public/data/teachers`);
+            const historyCollectionRef = collection(db, `artifacts/${appId}/public/data/visitHistory`);
+            const scheduleDocRef = doc(db, `artifacts/${appId}/public/data/schedule/current`);
+
+            onSnapshot(teachersCollectionRef, (snapshot) => {
+                state.teachers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.currentView === 'visitas') renderTeacherList();
+            });
+
+            onSnapshot(query(historyCollectionRef, orderBy('visitedAt', 'desc')), (snapshot) => {
+                state.visitHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.currentView === 'visitas') renderVisitHistory();
+            });
+
+            onSnapshot(scheduleDocRef, (doc) => {
+                if (doc.exists()) {
+                    state.schedule = doc.data();
+                } else {
+                    state.schedule = {};
+                }
+                if (state.currentView === 'visitas') renderScheduleGrid();
             });
         }
 
@@ -553,6 +648,7 @@
                 case 'agenda': renderAgendaView(); break;
                 case 'tags': renderTagsView(); break;
                 case 'settings': renderSettingsView(); break;
+                case 'visitas': renderVisitasView(); break;
             }
 
             const targetView = document.getElementById(`${viewName}-view`);
@@ -602,8 +698,34 @@
 
             view.innerHTML = `
             <header class="p-4 bg-white border-b border-slate-200 flex-shrink-0">${headerHTML}</header>
-            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
-                ${state.messages.map(msg => {
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar"></div>
+            <div id="chat-input-area" class="bg-white border-t border-slate-200 flex-shrink-0">
+                <div id="reply-preview" class="p-2 bg-slate-100 border-b border-slate-200" style="display: none;"></div>
+                <div id="attachments-preview" class="p-2 bg-slate-100" style="display: none;"></div>
+                <div class="p-4">
+                    <div class="flex gap-2">
+                        <button id="attach-btn" class="p-3 border border-slate-300 rounded-lg hover:bg-slate-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.59a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        </button>
+                        <input type="text" id="message-input" class="flex-1 p-3 border border-slate-300 rounded-lg" placeholder="Digite sua mensagem...">
+                        <button id="send-message-btn" class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Enviar</button>
+                    </div>
+                </div>
+            </div>`;
+
+            document.getElementById('send-message-btn').onclick = sendMessage;
+            document.getElementById('attach-btn').onclick = openAttachmentMenu;
+            document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+            renderMessages();
+            updateAttachmentsPreview();
+            updateReplyPreview();
+        }
+
+        function renderMessages() {
+            const messagesContainer = document.getElementById('chat-messages');
+            if (!messagesContainer) return;
+
+            messagesContainer.innerHTML = state.messages.map(msg => {
                 const isCurrentUser = msg.sender === state.currentUser;
                 const senderColor = userChatColors[msg.sender] || { bubble: 'bg-white text-slate-800 shadow-sm', senderName: 'text-teal-600', replyBubble: 'bg-slate-100 border-slate-300', replySender: 'text-slate-500' };
                 const currentUserColor = userChatColors[state.currentUser];
@@ -635,29 +757,9 @@
                             <p class="text-xs mt-2 text-right opacity-75 ${timestampColorClass}">${formatDateTime(msg.timestamp)}</p>
                         </div>
                     </div>`;
-            }).join('')}
-            </div>
-            <div id="chat-input-area" class="bg-white border-t border-slate-200 flex-shrink-0">
-                <div id="reply-preview" class="p-2 bg-slate-100 border-b border-slate-200" style="display: none;"></div>
-                <div id="attachments-preview" class="p-2 bg-slate-100" style="display: none;"></div>
-                <div class="p-4">
-                    <div class="flex gap-2">
-                        <button id="attach-btn" class="p-3 border border-slate-300 rounded-lg hover:bg-slate-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.59a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                        </button>
-                        <input type="text" id="message-input" class="flex-1 p-3 border border-slate-300 rounded-lg" placeholder="Digite sua mensagem...">
-                        <button id="send-message-btn" class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700">Enviar</button>
-                    </div>
-                </div>
-            </div>`;
+            }).join('');
 
-            document.getElementById('send-message-btn').onclick = sendMessage;
-            document.getElementById('attach-btn').onclick = openAttachmentMenu;
-            document.getElementById('message-input').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
-            const messagesContainer = view.querySelector('#chat-messages');
-            if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            updateAttachmentsPreview();
-            updateReplyPreview();
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         function renderTasksView() {
@@ -830,6 +932,52 @@
             document.getElementById('update-password-form').addEventListener('submit', handleUpdatePassword);
             checkNotificationPermission(); // Verifica o estado atual da permissão
         }
+
+        function renderVisitasView() {
+            const view = document.getElementById('visitas-view');
+            view.innerHTML = `
+                <div class="bg-slate-100 font-sans text-slate-800 w-full h-full flex flex-col">
+                  <header class="bg-white shadow-sm flex-shrink-0">
+                      <div class="p-4">
+                          <h1 class="text-xl font-bold text-indigo-600 flex items-center gap-2">Organizador de Visitas</h1>
+                      </div>
+                  </header>
+                  <main class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                      <div class="xl:col-span-1 flex flex-col gap-6">
+                        <div class="bg-white p-4 rounded-lg shadow-md">
+                          <h2 class="text-lg font-semibold mb-3">Gestão de Professores</h2>
+                          <form id="teacher-form" class="flex gap-2 mb-3">
+                            <input type="text" id="teacher-name" placeholder="Nome do Professor" class="flex-grow p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <button type="submit" class="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            </button>
+                          </form>
+                          <div id="teacher-list-container"></div>
+                        </div>
+                         <div class="bg-white p-4 rounded-lg shadow-md">
+                           <h2 class="text-lg font-semibold mb-3">Ações</h2>
+                          <button id="generate-schedule-btn" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2">
+                            Gerar Novo Cronograma
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                          </button>
+                        </div>
+                        <div id="visit-history-container"></div>
+                      </div>
+                      <div class="xl:col-span-2">
+                        <div id="schedule-grid-container"></div>
+                      </div>
+                    </div>
+                  </main>
+                </div>
+            `;
+            setupVisitasEventListeners();
+            renderTeacherList();
+            renderScheduleGrid();
+            renderVisitHistory();
+        }
+
+        
 
         async function forceReload() {
             try {
@@ -1547,6 +1695,262 @@
                 updateAttachmentsPreview();
             }
             closeModal();
+        }
+
+        // --- Funções de Visitas ---
+        function setupVisitasEventListeners() {
+            document.getElementById('teacher-form').addEventListener('submit', handleAddTeacher);
+            document.getElementById('generate-schedule-btn').addEventListener('click', handleGenerateSchedule);
+        }
+
+        async function handleAddTeacher(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('teacher-name');
+            const name = nameInput.value.trim();
+            if (name) {
+                const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+                const teachersCollectionRef = collection(db, `artifacts/${appId}/public/data/teachers`);
+                await addDoc(teachersCollectionRef, { name });
+                nameInput.value = '';
+            }
+        }
+
+        async function handleDeleteTeacher(id) {
+            const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+            const teacherDocRef = doc(db, `artifacts/${appId}/public/data/teachers`, id);
+            await deleteDoc(teacherDocRef);
+        }
+
+        async function handleGenerateSchedule() {
+            if (state.teachers.length === 0) {
+                alert("Adicione professores primeiro.");
+                return;
+            }
+            const days = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+            const slotsPerDay = 5; // Máximo de 5 aulas por dia
+            const shuffled = [...state.teachers].sort(() => 0.5 - Math.random());
+            const newSchedule = {};
+            let teacherIndex = 0;
+            days.forEach(day => {
+                newSchedule[day] = Array.from({ length: slotsPerDay }, () => {
+                    const teacher = shuffled[teacherIndex % shuffled.length];
+                    teacherIndex++;
+                    return { teacherName: teacher.name, done: false };
+                });
+            });
+
+            const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+            const scheduleDocRef = doc(db, `artifacts/${appId}/public/data/schedule/current`);
+            await setDoc(scheduleDocRef, newSchedule);
+        }
+
+        window.handleMarkAsDone = async (day, index) => {
+            const newSchedule = { ...state.schedule };
+            const visit = newSchedule[day][index];
+            const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+            const scheduleDocRef = doc(db, `artifacts/${appId}/public/data/schedule/current`);
+
+            if (visit.done) {
+                // If it was done, undo it
+                visit.done = false;
+                if (visit.historyId) {
+                    const historyDocRef = doc(db, `artifacts/${appId}/public/data/visitHistory`, visit.historyId);
+                    await deleteDoc(historyDocRef);
+                    delete visit.historyId;
+                }
+            } else {
+                // If it was not done, mark as done
+                visit.done = true;
+                const historyCollectionRef = collection(db, `artifacts/${appId}/public/data/visitHistory`);
+                const newHistoryDoc = await addDoc(historyCollectionRef, {
+                    teacherName: visit.teacherName,
+                    visitedAt: serverTimestamp()
+                });
+                visit.historyId = newHistoryDoc.id;
+            }
+
+            await setDoc(scheduleDocRef, newSchedule);
+        }
+
+        window.handleDeleteTeacher = async (id) => {
+            const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+            const teacherDocRef = doc(db, `artifacts/${appId}/public/data/teachers`, id);
+            await deleteDoc(teacherDocRef);
+        }
+
+        function renderTeacherList() {
+            const container = document.getElementById('teacher-list-container');
+            if (!container) return;
+
+            container.innerHTML = `
+                <h3 class="text-md font-semibold text-slate-700 flex items-center gap-2 mb-2">Professores (${state.teachers.length})</h3>
+                <div class="max-h-48 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-lg border custom-scrollbar">
+                    ${state.teachers.length === 0 ? `<p class="text-slate-500 text-center py-4">Nenhum professor.</p>` : `
+                        <ul class="divide-y divide-slate-200">
+                            ${state.teachers.map(teacher => `
+                                <li key=${teacher.id} class="flex justify-between items-center py-2">
+                                    <span class="text-slate-800 text-sm">${teacher.name}</span>
+                                    <button onclick="handleDeleteTeacher('${teacher.id}')" class="text-red-500 hover:text-red-700 p-1 rounded-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    </button>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    `}
+                </div>
+            `;
+        }
+
+        function renderScheduleGrid() {
+            const container = document.getElementById('schedule-grid-container');
+            if (!container) return;
+
+            if (Object.keys(state.schedule).length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full bg-slate-50 rounded-lg p-8 text-center border-2 border-dashed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 mb-4"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        <h3 class="text-xl font-semibold text-slate-700">Cronograma Semanal</h3>
+                        <p class="text-slate-500 mt-2">Gere um cronograma para visualizar a escala.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const days = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+
+            container.innerHTML = `
+                <div class="bg-white p-4 rounded-lg shadow-md animate-fade-in h-full flex flex-col">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3 flex-shrink-0">Cronograma da Semana</h3>
+                    <div id="kanban-board" class="flex-1 flex gap-4 overflow-x-auto custom-scrollbar pb-2">
+                        ${days.map(day => `
+                            <div class="flex-shrink-0 w-64 md:w-72 bg-slate-100 rounded-lg p-3 flex flex-col">
+                                <h4 class="font-bold text-center text-indigo-700 mb-3 flex-shrink-0">${day}</h4>
+                                <ul id="day-${day.replace(/[^A-Z0-9]/ig, "")}" class="space-y-2 min-h-[150px] day-column flex-1 overflow-y-auto custom-scrollbar" data-day="${day}">
+                                    ${(state.schedule[day] || []).map((item, index) => {
+                                        const hasContent = item && item.teacherName;
+                                        return `
+                                            <li data-id="${day}-${index}" class="p-3 rounded-md shadow-sm text-sm flex items-center gap-3 transition-all duration-200 cursor-grab ${hasContent ? 'bg-white' : 'bg-slate-200'} ${item?.done ? 'opacity-60' : ''}">
+                                                <span class="font-bold text-indigo-600">${index + 1}.</span>
+                                                <input type="checkbox" ${item?.done ? 'checked' : ''} onchange="handleMarkAsDone('${day}', ${index})" ${!hasContent ? 'disabled' : ''} class="form-checkbox h-5 w-5 text-green-600 rounded disabled:bg-slate-300">
+                                                <span class="flex-grow ${item?.done ? 'line-through text-slate-500' : 'text-slate-800'}">
+                                                    ${hasContent ? item.teacherName : '<span class="text-slate-400">Vago</span>'}
+                                                </span>
+                                            </li>
+                                        `;
+                                    }).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            initSortable();
+        }
+
+        function initSortable() {
+            const columns = document.querySelectorAll('.day-column');
+            columns.forEach(column => {
+                new Sortable(column, {
+                    group: 'shared',
+                    animation: 150,
+                    onEnd: async function (evt) {
+                        const itemEl = evt.item;
+                        const toDay = evt.to.dataset.day;
+                        const fromDay = evt.from.dataset.day;
+                        const newIndex = evt.newIndex;
+                        const oldIndex = evt.oldIndex;
+
+                        // Create a deep copy of the schedule to modify
+                        const newSchedule = JSON.parse(JSON.stringify(state.schedule));
+
+                        // Remove the item from the old list
+                        const [movedItem] = newSchedule[fromDay].splice(oldIndex, 1);
+
+                        // Add the item to the new list
+                        newSchedule[toDay].splice(newIndex, 0, movedItem);
+
+                        // Update the schedule in Firestore
+                        const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+                        const scheduleDocRef = doc(db, `artifacts/${appId}/public/data/schedule/current`);
+                        await setDoc(scheduleDocRef, newSchedule);
+
+                        // Re-render the grid to reflect the changes and re-number the cards
+                        renderScheduleGrid();
+                    }
+                });
+            });
+        }
+
+        function renderVisitHistory() {
+            const container = document.getElementById('visit-history-container');
+            if (!container) return;
+
+            const summary = state.visitHistory.reduce((acc, visit) => {
+                acc[visit.teacherName] = (acc[visit.teacherName] || 0) + 1;
+                return acc;
+            }, {});
+
+            const sortedSummary = Object.entries(summary).sort(([, a], [, b]) => b - a);
+
+            container.innerHTML = `
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-semibold text-slate-700">Histórico de Visitas</h3>
+                        <button onclick="clearVisitHistory()" class="text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Limpar
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-sm text-slate-600 mb-2">Resumo</h4>
+                            <div class="max-h-40 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-lg border custom-scrollbar">
+                                ${sortedSummary.length === 0 ? `<p class="text-slate-500 text-center py-2">Nenhum resumo.</p>` : `
+                                    <ul class="divide-y divide-slate-200">
+                                        ${sortedSummary.map(([name, count]) => `
+                                            <li class="flex justify-between items-center py-1 text-sm">
+                                                <span>${name}</span>
+                                                <span class="font-bold bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">${count}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                `}
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-sm text-slate-600 mb-2">Últimas Visitas</h4>
+                             <div class="max-h-40 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-lg border custom-scrollbar">
+                                ${state.visitHistory.length === 0 ? `<p class="text-slate-500 text-center py-2">Nenhuma visita registada.</p>` : `
+                                    <ul class="divide-y divide-slate-200">
+                                        ${state.visitHistory.slice(0, 10).map(visit => `
+                                            <li class="flex items-center gap-2 py-1 text-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                                <span>${visit.teacherName}</span>
+                                                <span class="text-slate-500 ml-auto text-xs">
+                                                    ${new Date(visit.visitedAt?.toDate()).toLocaleDateString('pt-BR')}
+                                                </span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.clearVisitHistory = () => {
+            showConfirmModal('Tem certeza que deseja limpar todo o histórico de visitas? Esta ação não pode ser desfeita.', async () => {
+                const appId = "1:149476517818:web:433463bdc40b0d1c415f83";
+                const historyCollectionRef = collection(db, `artifacts/${appId}/public/data/visitHistory`);
+                const historySnapshot = await getDocs(historyCollectionRef);
+                const batch = writeBatch(db);
+                historySnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+            });
         }
 
     </script>
