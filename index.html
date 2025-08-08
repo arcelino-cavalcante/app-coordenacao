@@ -15,11 +15,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Coordenador">
     <link rel="apple-touch-icon" href="icons/icon-192x192.svg">
 
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
 
     <!-- SortableJS para arrastar e soltar -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -233,6 +234,12 @@
                 </svg>
                 <span class="text-base font-medium">Tags</span>
             </button>
+            <button onclick="switchView('visitas')"
+                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
+                data-view="visitas">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                <span class="text-base font-medium">Visitas</span>
+            </button>
             <button onclick="switchView('settings')"
                 class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
                 data-view="settings">
@@ -243,12 +250,6 @@
                     <circle cx="12" cy="12" r="3" />
                 </svg>
                 <span class="text-base font-medium">Ajustes</span>
-            </button>
-            <button onclick="switchView('visitas')"
-                class="nav-link flex-row items-center gap-2 p-3 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors flex"
-                data-view="visitas">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
-                <span class="text-base font-medium">Visitas</span>
             </button>
         </nav>
 
@@ -303,20 +304,20 @@
                     </svg>
                     <span class="text-xs font-medium">Tags</span>
                 </button>
+                <button onclick="switchView('visitas')"
+                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="visitas">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                    <span class="text-xs font-medium">Visitas</span>
+                </button>
                 <button onclick="switchView('settings')"
                     class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="settings">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path
-                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                         <circle cx="12" cy="12" r="3" />
                     </svg>
                     <span class="text-xs font-medium">Ajustes</span>
-                </button>
-                <button onclick="switchView('visitas')"
-                    class="nav-link flex-1 flex flex-col items-center gap-1 p-2 text-slate-600" data-view="visitas">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
-                    <span class="text-xs font-medium">Visitas</span>
                 </button>
             </nav>
         </div>
@@ -799,6 +800,7 @@
                                 <div class="text-sm text-slate-500 mt-2 flex items-center gap-4 flex-wrap">
                                     <span class="flex items-center gap-1.5">Prazo: ${formatDate(task.deadline)}</span>
                                     <span class="font-semibold px-2 py-0.5 rounded-full ${style.bg} ${style.text}">${task.priority || 'Sem prioridade'}</span>
+                                    <span class="font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-800">${task.etapa || 'Sem etapa'}</span>
                                 </div>
                                 <div class="text-xs text-slate-400 mt-2 border-t pt-2">
                                     Criado por: <span class="font-medium">${task.createdBy || 'Desconhecido'}</span>
@@ -849,7 +851,8 @@
                              <div class="flex justify-between items-start">
                                 <div>
                                     <h4 class="font-bold text-lg">${event.title}</h4>
-                                    <p class="text-sm text-slate-500">${String(eventDate.getHours()).padStart(2, '0')}:${String(eventDate.getMinutes()).padStart(2, '0')}</p>
+                                    <p class="text-sm text-slate-500 mb-1">${String(eventDate.getHours()).padStart(2, '0')}:${String(eventDate.getMinutes()).padStart(2, '0')}</p>
+                                    <span class="font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-xs">${event.etapa || 'Sem etapa'}</span>
                                 </div>
                                 <div class="flex items-center gap-1">
                                     <button onclick="openEventModal('${event.id}')" class="p-2 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
@@ -1286,7 +1289,7 @@
                             <label for="task-description" class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
                             <input type="text" id="task-description" class="w-full p-2 border border-slate-300 rounded-md" required value="${task?.description || ''}">
                         </div>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div>
                                 <label for="task-deadline" class="block text-sm font-medium text-slate-700 mb-1">Prazo</label>
                                 <input type="date" id="task-deadline" class="w-full p-2 border border-slate-300 rounded-md" required value="${task ? new Date(task.deadline).toISOString().split('T')[0] : ''}">
@@ -1297,6 +1300,15 @@
                                     <option value="Baixa" ${task?.priority === 'Baixa' ? 'selected' : ''}>Baixa</option>
                                     <option value="Média" ${!task || task?.priority === 'Média' ? 'selected' : ''}>Média</option>
                                     <option value="Alta" ${task?.priority === 'Alta' ? 'selected' : ''}>Alta</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="task-etapa" class="block text-sm font-medium text-slate-700 mb-1">Etapa</label>
+                                <select id="task-etapa" class="w-full p-2 border border-slate-300 rounded-md">
+                                    <option value="Anos Iniciais" ${task?.etapa === 'Anos Iniciais' ? 'selected' : ''}>Anos Iniciais</option>
+                                    <option value="Anos Finais" ${task?.etapa === 'Anos Finais' ? 'selected' : ''}>Anos Finais</option>
+                                    <option value="Educação Infantil" ${task?.etapa === 'Educação Infantil' ? 'selected' : ''}>Educação Infantil</option>
+                                    <option value="EJA" ${task?.etapa === 'EJA' ? 'selected' : ''}>EJA</option>
                                 </select>
                             </div>
                         </div>
@@ -1317,11 +1329,13 @@
             const description = document.getElementById('task-description').value;
             const deadline = document.getElementById('task-deadline').value;
             const priority = document.getElementById('task-priority').value;
+            const etapa = document.getElementById('task-etapa').value;
 
             const data = {
                 description,
                 deadline: new Date(deadline).toISOString().split('T')[0] + 'T23:59:59.999Z',
                 priority,
+                etapa,
             };
 
             if (id) {
@@ -1368,7 +1382,7 @@
                             <label for="event-description" class="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
                             <textarea id="event-description" rows="3" class="w-full p-2 border border-slate-300 rounded-md">${event?.description || ''}</textarea>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div>
                                 <label for="event-date" class="block text-sm font-medium text-slate-700 mb-1">Data</label>
                                 <input type="date" id="event-date" class="w-full p-2 border border-slate-300 rounded-md" required value="${eventDate ? eventDate.toISOString().split('T')[0] : ''}">
@@ -1376,6 +1390,15 @@
                             <div>
                                 <label for="event-time" class="block text-sm font-medium text-slate-700 mb-1">Hora</label>
                                 <input type="time" id="event-time" class="w-full p-2 border border-slate-300 rounded-md" required value="${eventDate ? eventDate.toTimeString().slice(0, 5) : ''}">
+                            </div>
+                            <div>
+                                <label for="event-etapa" class="block text-sm font-medium text-slate-700 mb-1">Etapa</label>
+                                <select id="event-etapa" class="w-full p-2 border border-slate-300 rounded-md">
+                                    <option value="Anos Iniciais" ${event?.etapa === 'Anos Iniciais' ? 'selected' : ''}>Anos Iniciais</option>
+                                    <option value="Anos Finais" ${event?.etapa === 'Anos Finais' ? 'selected' : ''}>Anos Finais</option>
+                                    <option value="Educação Infantil" ${event?.etapa === 'Educação Infantil' ? 'selected' : ''}>Educação Infantil</option>
+                                    <option value="EJA" ${event?.etapa === 'EJA' ? 'selected' : ''}>EJA</option>
+                                </select>
                             </div>
                         </div>
                         <div class="flex justify-end gap-3">
@@ -1396,11 +1419,13 @@
             const description = document.getElementById('event-description').value;
             const date = document.getElementById('event-date').value;
             const time = document.getElementById('event-time').value;
+            const etapa = document.getElementById('event-etapa').value;
 
             const data = {
                 title,
                 description,
-                dateTime: new Date(`${date}T${time}`).toISOString()
+                dateTime: new Date(`${date}T${time}`).toISOString(),
+                etapa,
             };
 
             if (id) {
@@ -1958,7 +1983,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
+          navigator.serviceWorker.register('sw.js').then(registration => {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           }, err => {
             console.log('ServiceWorker registration failed: ', err);
